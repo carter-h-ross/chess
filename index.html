@@ -66,6 +66,16 @@
             background-color: #EEEEEE; color: #999999;
             text-align: right;
         }
+        .team-switch-on-off-inner:before {
+            content: "W";
+            padding-left: 10px;
+            background-color: #ffffff; color: #999999;
+        } 
+        .team-switch-on-off-inner:after {
+            content: "B";
+            padding-left: 10px;
+            background-color: #000000; color: #999999;
+        }
         .onoffswitch-switch {
             display: block; width: 18px; margin: 6px;
             background: #FFFFFF;
@@ -166,7 +176,7 @@
             <div class="onoffswitch">
                 <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="orbital-on-off" tabindex="0" checked>
                 <label class="onoffswitch-label" for="orbital-on-off">
-                    <span class="onoffswitch-inner"></span>
+                    <span class="onoffswitch-inner orbital-on-off-inner"></span>
                     <span class="onoffswitch-switch"></span>
                 </label>
             </div>
@@ -177,6 +187,17 @@
             <input type="range" min="0" max="255" value="0" class="slider" id="r-light" aria-label="Red">
             <input type="range" min="0" max="255" value="0" class="slider" id="g-light" aria-label="Green">
             <input type="range" min="0" max="255" value="0" class="slider" id="b-light" aria-label="Blue">
+        </div>
+
+        <div id="team-switch">
+            <p>switch team</p>
+            <div class="onoffswitch">
+                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="switch-team-on-off" tabindex="0" checked>
+                <label class="onoffswitch-label" for="switch-team-on-off">
+                    <span class="onoffswitch-inner team-switch-on-off-inner"></span>
+                    <span class="onoffswitch-switch"></span>
+                </label>
+            </div>
         </div>
 
     </div>
