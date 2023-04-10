@@ -281,7 +281,7 @@ class Spot {
     ic = [1,1,0,-1,-1,-1,0,1];
     for (let i = 0;i < 8;i++) {
       if (r+ir[i] > 0 && r+ir[i] < 8 && c+ic[i] > 0 && c+ic[i] < 8) {
-        if (n[r+ir[i]][c+ic[i]].id == `${opp[team]}k`) {
+        if (b[r+ir[i]][c+ic[i]].id == `${opp[team]}k`) {
           return true;
         }
       }
@@ -484,7 +484,8 @@ class Spot {
       ir = [0,1,1,1,0,-1,-1,-1];
       ic = [1,1,0,-1,-1,-1,0,1];
       for (let i = 0;i < 8;i++) {
-        if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8) {
+        if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 && board[r+ir[i]][c+ic[i]].team == "-") {
+          console.log("space empty");
           if (!(board[r+ir[i]][c+ic[i]].isCheck())) {
             moves.push([r+ir[i],c+ic[i]]);
           }
@@ -547,10 +548,12 @@ const opp = {
 
 var state = "unselected";
 var team = "w";
+var turn = "w";
 const switchElementTeam = document.getElementById('switch-team-on-off');
 var availableMoves = null;
 var rSelected = null;
 var cSelected = null;
+var encodedBoard = null;
 
 switchElementTeam.addEventListener('change', function() {
   if(this.checked) {
@@ -562,33 +565,209 @@ switchElementTeam.addEventListener('change', function() {
 
 encode_board();
 
-/*--------------------------------------- firebase setup ----------------------------------------*/
+/*--------------------------------------- firebase ----------------------------------------*/
 
-import { initializeApp } from "firebase/app"
-import { getDatabase, ref, child, get } from "firebase/database";
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  addDoc,
+} from "firebase/firestore";
+import { 
+  getDatabase,
+  ref, 
+  onValue, 
+  set
+} from "firebase/database";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, 
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth'
 
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "AIzaSyCs4gvbVgN6OyKCsoKxzpFhgDAecEdUn8E",
-    authDomain: "chess-3d-game.firebaseapp.com",
-    databaseURL: "https://chess-3d-game-default-rtdb.firebaseio.com",
-    projectId: "chess-3d-game",
-    storageBucket: "chess-3d-game.appspot.com",
-    messagingSenderId: "344543572240",
-    appId: "1:344543572240:web:dd8503ccfc4461df9e7595",
-    measurementId: "G-NFJ1NRNP8T"
+  apiKey: "AIzaSyBoeyEpmfRJT6GLiaQ0eDxvsSwi7ZoBB3E",
+  authDomain: "carterross-dev-chess.firebaseapp.com",
+  databaseURL: "https://carterross-dev-chess-default-rtdb.firebaseio.com",
+  projectId: "carterross-dev-chess",
+  storageBucket: "carterross-dev-chess.appspot.com",
+  messagingSenderId: "236327358610",
+  appId: "1:236327358610:web:445c12732d81f4114a164b",
+  measurementId: "G-LETTXG1LVE"
 };
 
-initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
-function writeUserData(userId, username, email) {
-  const db = getDatabase();
-  set(ref(db, 'users/' + userId), {
-    username: username,
-    email: email,
-    game: "menu",
+  /* ------------------------------------ firestore -----------------------------------*/
+const df = getFirestore(app);
+const colRef = collection(df, "leaderboard")
+var users = {};
+function getLeaderboardFromFirestore() {
+  getDocs(colRef)
+    .then((snapshot) => {
+      console.log(snapshot.docs);
+      snapshot.docs.forEach((doc) => {
+        users[doc.id] = { 
+          ...doc.data(),
+          id: doc.id
+        };
+      });
+      console.log(users);
+      localStorage.setItem('leaderboard', JSON.stringify(users));
+      console.log('leaderboard saved to local storage.');
+    })
+    .catch((err) => {
+      console.log(err.message);
+    });
+}
+
+function getUsers() {
+  return JSON.parse(localStorage.getItem('leaderboard'));
+}
+
+if (localStorage.getItem("leaderboard") !== null) {
+  users = getUsers();
+  console.log("leaderboard retrieved from local storage")
+  console.log(users);
+} else {
+  getLeaderboardFromFirestore();
+}
+
+  /* ------------------------------------ auth -----------------------------------------*/
+const dr = getDatabase();
+const auth = getAuth();
+var userId = null;
+var opponentName = "carter2"
+
+const signupForm = document.querySelector('.signup-login')
+signupForm.addEventListener('submit', (e) => {
+  e.preventDefault()
+
+  const email = signupForm.email.value
+  const password = signupForm.password.value
+
+  createUserWithEmailAndPassword(auth, email, password)
+    .then(cred => {
+      console.log('user created:', cred.user, "userId:", cred.user.id)
+      signupForm.reset()
+      userId = cred.user.uid;
+    })
+    .catch(err => {
+      console.log(err.message)
+    })
+})
+
+// logging in and out
+const logoutButton = document.querySelector('.logout')
+logoutButton.addEventListener('click', () => {
+  signOut(auth)
+    .then(() => {
+      console.log('user signed out')
+    })
+    .catch(err => {
+      console.log(err.message)
+    })
+})
+
+// updating game state
+const updateButton = document.querySelector('.update-game')
+updateButton.addEventListener('click', () => {
+  updateGameBoardDatabase(encodedBoard);
+  updateGameTeamDatabase(team);
+})
+
+const loginForm = document.querySelector('.signup-login')
+loginForm.addEventListener('submit', (e) => {
+  e.preventDefault()
+
+  const email = loginForm.email.value
+  const password = loginForm.password.value
+
+  signInWithEmailAndPassword(auth, email, password)
+    .then(cred => {
+      console.log('user logged in:', cred.user)
+      loginForm.reset()
+      userId = cred.user.uid;
+    })
+    .catch(err => {
+      console.log(err.message)
+    })
+})
+
+// remeber user details or not: 
+var rememberMe = false;
+var controlElement = document.querySelector('.control-checkbox');
+  var inputElement = controlElement.querySelector('.remember-me-check');
+  controlElement.addEventListener('click', function() {
+    if (inputElement.checked) {
+      console.log('user details saved to local storage');
+      rememberMe = true;
+    } else {
+      console.log('user details deleted from local storage');
+      rememberMe = false;
+    }
+  });
+
+// getting the users team
+const teamRef = ref(getDatabase(), `games/${userId}/${opponentName}/team`)
+function getTeam () {
+  if (localStorage.getItem(`games/${userId}/${opponentName}/teamm`) != null) {
+    team = localStorage.getItem(`games/${userId}/${opponentName}/teamm`);
+  } else {
+    get(teamRef)
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          const team = snapshot.val();
+          console.log("Team:", team);
+        } else {
+          console.log("No data found at the path.");
+        }
+      })
+      .catch((error) => {
+        console.log("Error getting data from Realtime Database:", error.message);
+      });
+  }
+}
+
+function updateGameTeamDatabase(userTeam) {
+  const gameRef = ref(getDatabase(), `games/${userId}/${opponentName}`);
+  set(gameRef, {
+    team: userTeam
+  })
+  .then(() => {
+    localStorage.setItem(`games/${userId}/${opponentName}/team`, "w");
+  })
+  .catch((error) => {
+    console.log("Error writing data to Realtime Database:", error.message);
   });
 }
+
+function updateGameBoardDatabase(code) {
+  const gameRef = ref(getDatabase(), `games/${userId}/${opponentName}`);
+  set(gameRef, {
+    board: encodedBoard
+  })
+  .then(() => {
+    if (turn == "w") {
+      turn = "b";
+    } else {
+      turn = "w";
+    }
+  })
+  .catch((error) => {
+    console.log("Error writing data to Realtime Database:", error.message);
+  });
+}
+
+// subscribing to auth changes
+const unsubAuth = onAuthStateChanged(auth, (user) => {
+  console.log('user status changed:', user);
+});
 
 /*-------------------------------------- three js section ---------------------------------------*/
 
@@ -735,7 +914,7 @@ function onCanvasClick(event) {
 
       /* ------------------------------------------------------------ game logic ----------------------------------------------------------------------*/
       if (state == "unselected") {
-        if (board[r][c].team == team) {
+        if (board[r][c].team == team && turn == team) {
           if (board[r][c].team != "-") {
             resetPlanes();
             availableMoves = board[r][c].find_moves();
@@ -752,7 +931,7 @@ function onCanvasClick(event) {
             board[rSelected][cSelected] = new Spot(rSelected,cSelected,"-=");
             scene.remove();
             log_board();
-            let encodedBoard = encode_board();
+            encodedBoard = encode_board();
             updateBoard();
             state = "unselected";
             return;
