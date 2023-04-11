@@ -15,7 +15,192 @@
             left: 0;
             z-index: -1;
         }
-        .menu {
+
+        /* remember password css */
+        .control {
+            font-family: arial;
+            display: block;
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 5px;
+            padding-top: 3px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+            .control input {
+                position: absolute;
+                z-index: -1;
+                opacity: 0;
+            }
+        .control_indicator {
+            position: absolute;
+            top: 2px;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            background: #e6e6e6;
+            border: 0px solid #000000;
+            border-radius: 0px;
+            margin-bottom: 10px;
+        }
+        .control:hover input ~ .control_indicator,
+        .control input:focus ~ .control_indicator {
+            background: #cccccc;
+        }
+        
+        .control input:checked ~ .control_indicator {
+            background: #2aa1c0;
+        }
+        .control:hover input:not([disabled]):checked ~ .control_indicator,
+        .control input:checked:focus ~ .control_indicator {
+            background: #0e6647;
+        }
+        .control input:disabled ~ .control_indicator {
+            background: #e6e6e6;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .control_indicator:after {
+            box-sizing: unset;
+            content: '';
+            position: absolute;
+            display: none;
+        }
+        .control input:checked ~ .control_indicator:after {
+            display: block;
+        }
+        .control-checkbox .control_indicator:after {
+            left: 8px;
+            top: 4px;
+            width: 3px;
+            height: 8px;
+            border: solid #ffffff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        .control-checkbox input:disabled ~ .control_indicator:after {
+            border-color: #7b7b7b;
+        }
+        .control-checkbox .control_indicator::before {
+            content: '';
+            display: block;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4.5rem;
+            height: 4.5rem;
+            margin-left: -1.3rem;
+            margin-top: -1.3rem;
+            background: #2aa1c0;
+            border-radius: 3rem;
+            opacity: 0.6;
+            z-index: 99999;
+            transform: scale(0);
+        }
+        @keyframes s-ripple {
+            0% {
+                transform: scale(0);
+            }
+            20% {
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1);
+            }
+        }
+        @keyframes s-ripple-dup {
+           0% {
+               transform: scale(0);
+            }
+           30% {
+                transform: scale(1);
+            }
+            60% {
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1);
+            }
+        }
+        .control-checkbox input + .control_indicator::before {
+            animation: s-ripple 250ms ease-out;
+        }
+        .control-checkbox input:checked + .control_indicator::before {
+            animation-name: s-ripple-dup;
+        }
+
+        .signup-login {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .main-menu-button {
+            box-shadow:inset 0px 1px 0px 0px #dcecfb;
+            background:linear-gradient(to bottom, #bddbfa 5%, #80b5ea 100%);
+            background-color:#bddbfa;
+            border-radius:6px;
+            border:1px solid #84bbf3;
+            display:inline-block;
+            cursor:pointer;
+            color:#ffffff;
+            font-family:Arial;
+            font-size:15px;
+            font-weight:bold;
+            padding:7px 32px;
+            text-decoration:none;
+            text-shadow:0px 1px 0px #528ecc;
+            margin-top: 10px;
+        }
+        .main-menu-button:hover {
+            background:linear-gradient(to bottom, #80b5ea 5%, #bddbfa 100%);
+            background-color:#80b5ea;
+        }
+        .main-menu-button:active {
+            position:relative;
+            top:1px;
+        }
+
+        .main-menu {
+            position: fixed;
+            top: 10%;
+            bottom: 12%;
+            left: 3%;
+            width: 16%;
+            height: 80%;
+            /* From https://css.glass */
+            background: rgba(255, 255, 255, 0.57);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(12.1px);
+            -webkit-backdrop-filter: blur(12.1px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .main-menu-input { 
+            font-size:16px; 
+            border-style:inset; 
+            border-color:#a8a8a8; 
+            text-align:left; 
+            border-width:1px; 
+            border-radius:8px; 
+            box-shadow: 2px 4px 12px 0px rgba(0,0,0,.72); 
+            text-shadow:0px 0px 0px rgba(42,42,42,.75); 
+            font-weight:normal; font-family:sans-serif; 
+            padding:6px;  
+            margin-bottom: 10px;
+        }
+        .main-menu-input:focus { 
+            outline:none; 
+        }  
+        .debug-menu {
             position: fixed;
             align-items: center;
             top: 10%;
@@ -169,37 +354,62 @@
 
     <canvas id="bg"></canvas>
 
-    <div class="menu">
+    <div class="boxes">
 
-        <div id="orbital-contorls-switch">
-            <p>orbital controls</p>
-            <div class="onoffswitch">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="orbital-on-off" tabindex="0" checked>
-                <label class="onoffswitch-label" for="orbital-on-off">
-                    <span class="onoffswitch-inner orbital-on-off-inner"></span>
-                    <span class="onoffswitch-switch"></span>
+        <div class="main-menu">
+
+            <form class="signup-login">
+                <label for="email">email:</label>
+                <input class="main-menu-input email-input" type="email" name="email">
+                <label for="password">password:</label>
+                <input class="main-menu-input password-input" type="password" name="password">
+                <label for="username">username:</label>
+                <input class="main-menu-input username-input" type="username" name="username">
+                <label class="control control-checkbox">
+                    remember me
+                        <input class="remember-me-check" type="checkbox" checked="unchecked" />
+                    <div class="control_indicator"></div>
                 </label>
+                <button class="main-menu-button">signup</button>
+                <button class="main-menu-button">login</button>
+            </form>
+            <button class="logout main-menu-button">logout</button>
+            <button class="update-game main-menu-button">update game</button>
+
+        </div>
+
+        <div class="debug-menu">
+
+            <div id="orbital-contorls-switch">
+                <p>orbital controls</p>
+                <div class="onoffswitch">
+                    <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="orbital-on-off" tabindex="0" checked>
+                    <label class="onoffswitch-label" for="orbital-on-off">
+                        <span class="onoffswitch-inner orbital-on-off-inner"></span>
+                        <span class="onoffswitch-switch"></span>
+                    </label>
+                </div>
             </div>
-        </div>
 
-        <div id="ambient-light-slider">
-            <p>rgb value of ambient light</p>
-            <input type="range" min="0" max="255" value="0" class="slider" id="r-light" aria-label="Red">
-            <input type="range" min="0" max="255" value="0" class="slider" id="g-light" aria-label="Green">
-            <input type="range" min="0" max="255" value="0" class="slider" id="b-light" aria-label="Blue">
-        </div>
-
-        <div id="team-switch">
-            <p>switch team</p>
-            <div class="onoffswitch">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="switch-team-on-off" tabindex="0" checked>
-                <label class="onoffswitch-label" for="switch-team-on-off">
-                    <span class="onoffswitch-inner team-switch-on-off-inner"></span>
-                    <span class="onoffswitch-switch"></span>
-                </label>
+            <div id="ambient-light-slider">
+                <p>rgb value of ambient light</p>
+                <input type="range" min="0" max="255" value="0" class="slider" id="r-light" aria-label="Red">
+                <input type="range" min="0" max="255" value="0" class="slider" id="g-light" aria-label="Green">
+                <input type="range" min="0" max="255" value="0" class="slider" id="b-light" aria-label="Blue">
             </div>
-        </div>
 
+            <div id="team-switch">
+                <p>switch team</p>
+                <div class="onoffswitch">
+                    <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="switch-team-on-off" tabindex="0" checked>
+                    <label class="onoffswitch-label" for="switch-team-on-off">
+                        <span class="onoffswitch-inner team-switch-on-off-inner"></span>
+                        <span class="onoffswitch-switch"></span>
+                    </label>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <script src="bundle.js"></script>

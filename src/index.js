@@ -26,7 +26,7 @@ function log_board(){
 }
 
 function encode_board() {
-  let result = "";
+  let result = `${turn}`;
   let counter = 0;
   let empty = false;
   outerloop:
@@ -57,7 +57,8 @@ function decode_board(code) {
   let result = Array(8).fill().map(() => Array(8).fill(null));
   let r = 0;
   let c = 0;
-  let i = 0;
+  turn = code[0];
+  let i = 1;
   while (i < code.length) {
     let ch = code.charAt(i);
     if (ch >= '0' && ch <= '9') {
@@ -650,16 +651,22 @@ signupForm.addEventListener('submit', (e) => {
 
   const email = signupForm.email.value
   const password = signupForm.password.value
+  const username = signupForm.username.value
 
-  createUserWithEmailAndPassword(auth, email, password)
-    .then(cred => {
-      console.log('user created:', cred.user, "userId:", cred.user.id)
-      signupForm.reset()
-      userId = cred.user.uid;
-    })
-    .catch(err => {
-      console.log(err.message)
-    })
+  if (username != null && username !== "must enter when creating account") {
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(cred => {
+        console.log('user created:', cred.user, "userId:", cred.user.id)
+        signupForm.reset()
+        userId = cred.user.uid;
+      })
+      .catch(err => {
+        console.log(err.message)
+      })
+  } else {
+    console.log("username cannot be empty when signing up");
+    signupForm.username.value = "must enter when creating account";
+  }
 })
 
 // logging in and out
@@ -687,7 +694,20 @@ loginForm.addEventListener('submit', (e) => {
 
   const email = loginForm.email.value
   const password = loginForm.password.value
+  const username = loginForm.username.value
 
+  if (rememberMe) {
+    console.log("login details remembered after logging in");
+    localStorage.setItem("savedEmail", email);
+    localStorage.setItem("savedPassword", password);
+    localStorage.setItem("savedUsername", username);
+  } else {
+    console.log("login details not remembered after logging in");
+    localStorage.removeItem("savedEmail");
+    localStorage.removeItem("savedPassword");
+    localStorage.removeItem("savedUsername");
+  }
+  
   signInWithEmailAndPassword(auth, email, password)
     .then(cred => {
       console.log('user logged in:', cred.user)
@@ -700,24 +720,29 @@ loginForm.addEventListener('submit', (e) => {
 })
 
 // remeber user details or not: 
-var rememberMe = false;
+var rememberMe = true;
+document.querySelector('.control-checkbox').checked = false;
 var controlElement = document.querySelector('.control-checkbox');
   var inputElement = controlElement.querySelector('.remember-me-check');
   controlElement.addEventListener('click', function() {
     if (inputElement.checked) {
-      console.log('user details saved to local storage');
       rememberMe = true;
     } else {
-      console.log('user details deleted from local storage');
       rememberMe = false;
     }
   });
 
+if (localStorage.getItem("savedEmail") != null && localStorage.getItem("savedPassword") != null && localStorage.getItem("savedUsername") != null) {
+  document.querySelector(".email-input").value = localStorage.getItem("savedEmail");
+  document.querySelector(".password-input").value = localStorage.getItem("savedPassword");
+  document.querySelector(".username-input").value = localStorage.getItem("savedUsername");
+}
+
 // getting the users team
 const teamRef = ref(getDatabase(), `games/${userId}/${opponentName}/team`)
 function getTeam () {
-  if (localStorage.getItem(`games/${userId}/${opponentName}/teamm`) != null) {
-    team = localStorage.getItem(`games/${userId}/${opponentName}/teamm`);
+  if (localStorage.getItem(`games/${userId}/${opponentName}/team`) != null) {
+    team = localStorage.getItem(`games/${userId}/${opponentName}/team`);
   } else {
     get(teamRef)
       .then((snapshot) => {
@@ -934,6 +959,11 @@ function onCanvasClick(event) {
             encodedBoard = encode_board();
             updateBoard();
             state = "unselected";
+            if (turn == "w") {
+              turn = "b";
+            } else {
+              turn = "w"
+            }
             return;
           }
         }
