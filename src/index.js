@@ -580,7 +580,8 @@ import {
   getDatabase,
   ref, 
   onValue, 
-  set
+  set,
+  get
 } from "firebase/database";
 import {
   getAuth,
@@ -639,19 +640,46 @@ if (localStorage.getItem("leaderboard") !== null) {
   getLeaderboardFromFirestore();
 }
 
-  /* ------------------------------------ auth -----------------------------------------*/
+  /* ------------------------------------ firebase section -----------------------------------------*/
 const dr = getDatabase();
 const auth = getAuth();
 var userId = null;
 var opponentName = "carter2"
+var username = null;
+const mainMenuDiv = document.querySelector(".home-menu");
+const ingameMenuDiv = document.querySelector(".ingame-menu");
+const matchMenuDiv = document.querySelector(".match-menu");
 
+// left side menus navigation
+function goToMainMenu() {
+  mainMenuDiv.style.display = "flex";
+  ingameMenuDiv.style.display = "none";
+  matchMenuDiv.style.display = "none";
+}
+
+function goToIngameMenu() {
+  mainMenuDiv.style.display = "none";
+  ingameMenuDiv.style.display = "flex";
+}
+
+function gotToMatchMenu() {
+  matchMenuDiv.style.display = "flex";
+  ingameMenuDiv.style.display = "none";
+}
+
+function leaveMatchMenu() {
+  matchMenuDiv.style.display = "none";
+  ingameMenuDiv.style.display = "flex";
+}
+
+// sign up and login
 const signupForm = document.querySelector('.signup-login')
 signupForm.addEventListener('submit', (e) => {
   e.preventDefault()
 
   const email = signupForm.email.value
   const password = signupForm.password.value
-  const username = signupForm.username.value
+  username = signupForm.username.value
 
   if (username != null && username !== "must enter when creating account") {
     createUserWithEmailAndPassword(auth, email, password)
@@ -659,6 +687,7 @@ signupForm.addEventListener('submit', (e) => {
         console.log('user created:', cred.user, "userId:", cred.user.id)
         signupForm.reset()
         userId = cred.user.uid;
+        goToIngameMenu();
       })
       .catch(err => {
         console.log(err.message)
@@ -675,17 +704,11 @@ logoutButton.addEventListener('click', () => {
   signOut(auth)
     .then(() => {
       console.log('user signed out')
+      goToMainMenu();
     })
     .catch(err => {
       console.log(err.message)
     })
-})
-
-// updating game state
-const updateButton = document.querySelector('.update-game')
-updateButton.addEventListener('click', () => {
-  updateGameBoardDatabase(encodedBoard);
-  updateGameTeamDatabase(team);
 })
 
 const loginForm = document.querySelector('.signup-login')
@@ -713,11 +736,31 @@ loginForm.addEventListener('submit', (e) => {
       console.log('user logged in:', cred.user)
       loginForm.reset()
       userId = cred.user.uid;
+      goToIngameMenu();
     })
     .catch(err => {
       console.log(err.message)
     })
 })
+
+// buttons after logging in
+const joinMatchButton = document.querySelector(".create-game");
+joinMatchButton.addEventListener("click", (e) => {
+  e.preventDefault();
+  joinMatch();
+});
+
+const createMatchButton = document.querySelector(".create-game");
+createMatchButton.addEventListener("click", (e) => {
+  e.preventDefault();
+  createMatch();
+});
+
+const leaveMatchButton = document.querySelector(".leave-game");
+leaveMatchButton.addEventListener("click", (e) => {
+  e.preventDefault();
+  leaveMatch();
+});
 
 // remeber user details or not: 
 var rememberMe = true;
@@ -738,50 +781,28 @@ if (localStorage.getItem("savedEmail") != null && localStorage.getItem("savedPas
   document.querySelector(".username-input").value = localStorage.getItem("savedUsername");
 }
 
-// getting the users team
-const teamRef = ref(getDatabase(), `games/${userId}/${opponentName}/team`)
-function getTeam () {
-  if (localStorage.getItem(`games/${userId}/${opponentName}/team`) != null) {
-    team = localStorage.getItem(`games/${userId}/${opponentName}/team`);
+function getMatchRef() {
+  if (team == "w") {
+    return `games/${username}-${opponentName}`;
   } else {
-    get(teamRef)
-      .then((snapshot) => {
-        if (snapshot.exists()) {
-          const team = snapshot.val();
-          console.log("Team:", team);
-        } else {
-          console.log("No data found at the path.");
-        }
-      })
-      .catch((error) => {
-        console.log("Error getting data from Realtime Database:", error.message);
-      });
+    return `games/${opponentName}-${username}`;
   }
 }
 
-function updateGameTeamDatabase(userTeam) {
-  const gameRef = ref(getDatabase(), `games/${userId}/${opponentName}`);
-  set(gameRef, {
-    team: userTeam
-  })
-  .then(() => {
-    localStorage.setItem(`games/${userId}/${opponentName}/team`, "w");
-  })
-  .catch((error) => {
-    console.log("Error writing data to Realtime Database:", error.message);
-  });
-}
+var matchRef = `games/${username}-${opponentName}`;
 
-function updateGameBoardDatabase(code) {
-  const gameRef = ref(getDatabase(), `games/${userId}/${opponentName}`);
-  set(gameRef, {
+function updateGameBoardDatabase(op = " ") {
+  console.log(op);
+  set(ref(dr, matchRef), {
     board: encodedBoard
   })
   .then(() => {
-    if (turn == "w") {
-      turn = "b";
-    } else {
-      turn = "w";
+    if (op == " ") {
+      if (turn == "w") {
+        turn = "b";
+      } else {
+        turn = "w";
+      }
     }
   })
   .catch((error) => {
@@ -789,10 +810,68 @@ function updateGameBoardDatabase(code) {
   });
 }
 
+// listen for changes in the database of game board
+let isMatchRefInitialized = false;
+const setupMatchRefListener = () => {
+  if (matchRef && !isMatchRefInitialized) {
+    onValue(ref(dr, matchRef), (snapshot) => {
+      if (isMatchRefInitialized) {
+        const boardData = snapshot.val();
+        if (boardData != null) {
+          board = decode_board(boardData);
+        }
+        updateBoardMeshes();
+      } else {
+        isBoardRefInitialized = true;
+      }
+    });
+    isMatchRefInitialized = true;
+  }
+};
+
+const removeMatchRefListener = () => {
+  if (matchRef && isMatchRefInitialized) {
+    off(matchRef);
+    isMatchRefInitialized = false;
+  }
+};
+
+// creating and joining a match
+function createMatch() {
+  opponentName = document.querySelector(".opponent-input").value;
+  matchRef = getMatchRef();
+  setupMatchRefListener();
+  updateGameBoardDatabase("newMatch");
+}
+
+function joinMatch() {
+  opponentName = document.querySelector(".opponent-input").value;
+  get(ref(dr, matchRef)).then((snapshot) => {
+    if (!(snapshot.exists())) {
+      document.querySelector(".opponent-input").value = "game not created";
+    } else {
+      matchRef = getMatchRef();
+      setupMatchRefListener();
+      gotToMatchMenu();
+    }
+  })
+  .catch(error => {
+    console.error('Error checking path:', error);
+  });
+}
+
+function leaveMatch() {
+  leaveMatchMenu();
+  isMatchRefInitialized = false;
+  removeMatchRefListener();
+}
+
 // subscribing to auth changes
 const unsubAuth = onAuthStateChanged(auth, (user) => {
   console.log('user status changed:', user);
 });
+
+goToMainMenu();
 
 /*-------------------------------------- three js section ---------------------------------------*/
 
@@ -842,7 +921,7 @@ class piece3d {
 //board pieces placed ** currently for development only cubes **
 var meshes = [];
 
-function updateBoard() {
+function updateBoardMeshes() {
   for (let r = 0; r < 8;r++) {
     for (let c = 0; c < 8; c++) {
       for (let i = 0; i < meshes.length; i++) {
@@ -939,6 +1018,7 @@ function onCanvasClick(event) {
 
       /* ------------------------------------------------------------ game logic ----------------------------------------------------------------------*/
       if (state == "unselected") {
+        console.log(board[r][c])
         if (board[r][c].team == team && turn == team) {
           if (board[r][c].team != "-") {
             resetPlanes();
@@ -957,13 +1037,8 @@ function onCanvasClick(event) {
             scene.remove();
             log_board();
             encodedBoard = encode_board();
-            updateBoard();
+            updateGameBoardDatabase(encodedBoard);
             state = "unselected";
-            if (turn == "w") {
-              turn = "b";
-            } else {
-              turn = "w"
-            }
             return;
           }
         }
@@ -1063,7 +1138,7 @@ gltfLoader.load("chess_board/scene.gltf", function(gltf) {
   console.error(error);
 });
 
-updateBoard(decode_board(encode_board()));
+updateBoardMeshes(decode_board(encode_board()));
 
 // main loop
 function animate() {
