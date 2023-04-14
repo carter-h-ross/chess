@@ -25,8 +25,13 @@ function log_board(){
   console.log(result);
 }
 
-function encode_board() {
-  let result = `${turn}`;
+function encode_board(op="") {
+  let result = "";
+  if (op == "w") {
+    result = "w";
+  } else {
+    result = `${opp[turn]}`;
+  }
   let counter = 0;
   let empty = false;
   outerloop:
@@ -53,6 +58,10 @@ function encode_board() {
   return result;
 }
 
+function isNumber(char) {
+  return /^\d$/.test(char);
+}
+
 function decode_board(code) {
   let result = Array(8).fill().map(() => Array(8).fill(null));
   let r = 0;
@@ -60,11 +69,15 @@ function decode_board(code) {
   turn = code[0];
   let i = 1;
   while (i < code.length) {
-    let ch = code.charAt(i);
-    if (ch >= '0' && ch <= '9') {
+    let ch = code[i];
+    if (isNumber(ch)) {
+      if (isNumber(code[i+1])) {
+        ch += code[i+1];
+        i++;
+      }
       let count = parseInt(ch);
       for (let j = 0; j < count; j++) {
-        result[r][c] = new Spot(r, c, "-=");
+        result[r][c] = new Spot(r,c,"-=")
         c++;
         if (c == 8) {
           c = 0;
@@ -74,7 +87,7 @@ function decode_board(code) {
       i++;
     } else {
       let id = ch + code.charAt(i + 1);
-      result[r][c] = new Spot(r, c, id);
+      result[r][c] = new Spot(r,c,id);
       c++;
       if (c == 8) {
         c = 0;
@@ -83,7 +96,7 @@ function decode_board(code) {
       i += 2;
     }
   }
-  console.log(result);
+  console.log("result of decoded board: ", result);
   return result;
 }
 
@@ -550,19 +563,10 @@ const opp = {
 var state = "unselected";
 var team = "w";
 var turn = "w";
-const switchElementTeam = document.getElementById('switch-team-on-off');
 var availableMoves = null;
 var rSelected = null;
 var cSelected = null;
 var encodedBoard = null;
-
-switchElementTeam.addEventListener('change', function() {
-  if(this.checked) {
-    team = "w"
-  } else {
-    team = "b"
-  }
-});
 
 encode_board();
 
@@ -663,11 +667,13 @@ function goToIngameMenu() {
 }
 
 function gotToMatchMenu() {
+  console.log("gotToMatchMenu")
   matchMenuDiv.style.display = "flex";
   ingameMenuDiv.style.display = "none";
 }
 
 function leaveMatchMenu() {
+  console.log("leaveMatchMenu")
   matchMenuDiv.style.display = "none";
   ingameMenuDiv.style.display = "flex";
 }
@@ -744,7 +750,7 @@ loginForm.addEventListener('submit', (e) => {
 })
 
 // buttons after logging in
-const joinMatchButton = document.querySelector(".create-game");
+const joinMatchButton = document.querySelector(".join-game");
 joinMatchButton.addEventListener("click", (e) => {
   e.preventDefault();
   joinMatch();
@@ -793,17 +799,13 @@ var matchRef = `games/${username}-${opponentName}`;
 
 function updateGameBoardDatabase(op = " ") {
   console.log(op);
+  matchRef = getMatchRef();
+  console.log(encode_board());
   set(ref(dr, matchRef), {
-    board: encodedBoard
+    board: encode_board()
   })
   .then(() => {
-    if (op == " ") {
-      if (turn == "w") {
-        turn = "b";
-      } else {
-        turn = "w";
-      }
-    }
+    
   })
   .catch((error) => {
     console.log("Error writing data to Realtime Database:", error.message);
@@ -817,12 +819,17 @@ const setupMatchRefListener = () => {
     onValue(ref(dr, matchRef), (snapshot) => {
       if (isMatchRefInitialized) {
         const boardData = snapshot.val();
+        console.log("baord data: ", boardData)
+        console.log("board data[]: ", boardData["board"])
+        console.log("decoded board: ", decode_board(boardData["board"]))
+        console.log(board)
+        console.log(matchRef)
         if (boardData != null) {
-          board = decode_board(boardData);
+          board = decode_board(boardData["board"]);
+          updateBoardMeshes();
         }
-        updateBoardMeshes();
       } else {
-        isBoardRefInitialized = true;
+        isMatchRefInitialized = true;
       }
     });
     isMatchRefInitialized = true;
@@ -838,19 +845,24 @@ const removeMatchRefListener = () => {
 
 // creating and joining a match
 function createMatch() {
-  opponentName = document.querySelector(".opponent-input").value;
+  team = "w";
+  opponentName = document.querySelector(".opponent-username-input").value;
+  console.log("opponent name after creating match is: ", opponentName);
   matchRef = getMatchRef();
   setupMatchRefListener();
   updateGameBoardDatabase("newMatch");
+  gotToMatchMenu();
 }
 
 function joinMatch() {
-  opponentName = document.querySelector(".opponent-input").value;
+  opponentName = document.querySelector(".opponent-username-input").value;
+  team = "b";
+  matchRef = getMatchRef();
   get(ref(dr, matchRef)).then((snapshot) => {
     if (!(snapshot.exists())) {
-      document.querySelector(".opponent-input").value = "game not created";
+      document.querySelector(".opponent-username-input").value = "game not created";
+      console.log("game not created")
     } else {
-      matchRef = getMatchRef();
       setupMatchRefListener();
       gotToMatchMenu();
     }
@@ -896,16 +908,6 @@ camera.position.y = 10;
 // orbit controls
 const orbit = new OrbitControls(camera, renderer.domElement);
 orbit.update();
-
-const switchElementOrbital = document.getElementById('orbital-on-off');
-
-switchElementOrbital.addEventListener('change', function() {
-  if(this.checked) {
-    orbit.enabled = true;
-  } else {
-    orbit.enabled = false;
-  }
-});
 
 class piece3d {
   constructor(r,c,mesh) {
@@ -1037,9 +1039,8 @@ function onCanvasClick(event) {
             scene.remove();
             log_board();
             encodedBoard = encode_board();
-            updateGameBoardDatabase(encodedBoard);
+            updateGameBoardDatabase();
             state = "unselected";
-            return;
           }
         }
         state = "unselected";
@@ -1086,33 +1087,6 @@ console.log(planesArray);
 // ambient scene light
 const ambientLight = new THREE.AmbientLight(0xffffff)
 scene.add(ambientLight);
-
-var rSlider = document.getElementById("r-light");
-var gSlider = document.getElementById("g-light");
-var bSlider = document.getElementById("b-light");
-
-var rValue = 0;
-var gValue = 0;
-var bValue = 0;
-
-rSlider.addEventListener("input", function() {
-  rValue = parseInt(rSlider.value);
-  changeColor();
-});
-
-gSlider.addEventListener("input", function() {
-  gValue = parseInt(gSlider.value);
-  changeColor();
-});
-
-bSlider.addEventListener("input", function() {
-  bValue = parseInt(bSlider.value);
-  changeColor();
-});
-
-function changeColor() {
-  ambientLight.color.setHex(rgbToHex(rValue, gValue, bValue));
-}
 
 function rgbToHex(r, g, b) {
   var redHex = r.toString(16).padStart(2, '0');
