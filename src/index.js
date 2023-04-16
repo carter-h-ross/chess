@@ -316,6 +316,10 @@ class Spot {
     let piece = this.piece;
     let id = this.id;
 
+    if (inCheck && b[r][c].piece != "k") {
+      return [];
+    }
+
     // finds moves for white pawns
     if(id == "wp") {
       if (r > 0) {
@@ -495,8 +499,8 @@ class Spot {
 
     // checks for moves king can make
     if (piece == "k") {
-      ir = [0,1,1,1,0,-1,-1,-1];
-      ic = [1,1,0,-1,-1,-1,0,1];
+      ir = [0,1,1, 1, 0,-1,-1,-1];
+      ic = [1,1,0,-1,-1,-1, 0, 1];
       for (let i = 0;i < 8;i++) {
         if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 && board[r+ir[i]][c+ic[i]].team == "-") {
           console.log("space empty");
@@ -567,6 +571,10 @@ var availableMoves = null;
 var rSelected = null;
 var cSelected = null;
 var encodedBoard = null;
+var inCheck = false;
+var inCheckLoc = null;
+var checkMate = false;
+var kingLoc = [9,9]
 
 encode_board();
 
@@ -768,6 +776,12 @@ leaveMatchButton.addEventListener("click", (e) => {
   leaveMatch();
 });
 
+const resetMatchButton = document.querySelector(".reset-game");
+resetMatchButton.addEventListener("click", (e) => {
+  e.preventDefault();
+  resetMatch();
+});
+
 // remeber user details or not: 
 var rememberMe = true;
 document.querySelector('.control-checkbox').checked = false;
@@ -878,12 +892,22 @@ function leaveMatch() {
   removeMatchRefListener();
 }
 
+function resetMatch() {
+  board = decode_board("bbrbnbbbqbkbbbnbrbpbpbpbpbpbpbpbp32wpwpwpwpwpwpwpwpwrwnwbwqwkwbwnwr");
+  updateGameBoardDatabase();
+  state = "unselected";
+}
+
 // subscribing to auth changes
 const unsubAuth = onAuthStateChanged(auth, (user) => {
   console.log('user status changed:', user);
 });
 
 goToMainMenu();
+
+function gameOver(winner) {
+  console.log('game over - winner: ', winner);
+}
 
 /*-------------------------------------- three js section ---------------------------------------*/
 
@@ -924,6 +948,18 @@ class piece3d {
 var meshes = [];
 
 function updateBoardMeshes() {
+
+  // looks to see if the king is in check
+  kingLoc = findKing(team);
+  if (board[kingLoc[0]][kingLoc[1]].isCheck()) {
+    inCheckLoc = [kingLoc[0]][kingLoc[1]];
+    inCheck = true;
+    highlightPlane(kingLoc[0],kingLoc[1],"red");
+    if (board[kingLoc[0]][kingLoc[1]].find_moves() == []) {
+      gameOver(opp[team]);
+    }
+  }
+
   for (let r = 0; r < 8;r++) {
     for (let c = 0; c < 8; c++) {
       for (let i = 0; i < meshes.length; i++) {
@@ -984,14 +1020,21 @@ function highlightMoves(moves) {
   }
 }
 
-function highlightPlane(r,c) {
-  planesArray[r][c].material.color.set(0xffff00);
+function highlightPlane(r,c,color="yellow") {
+  if (color == "yellow") {
+    planesArray[r][c].material.color.set(0xffff00);
+  } else if (color == "red") {
+    planesArray[r][c].material.color.set(0xff0000);
+  }
 }
 
 function resetPlanes() {
   for (let i = 0; i < 8;i++) {
     for (let j = 0; j < 8; j++) {
-      if (planesArray[i][j].userData.defaultColor == "b") {
+      if (inCheck && kingLoc[0] === i && kingLoc[1] === j) {
+        highlightPlane(kingLoc[0], kingLoc[1],"red")
+      }
+      else if (planesArray[i][j].userData.defaultColor == "b") {
         planesArray[i][j].material.color.set(0x000000);
       } else {
         planesArray[i][j].material.color.set(0xffffff);
