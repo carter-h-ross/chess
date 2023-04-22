@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Play Chess</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            color: #ffffff;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-image: linear-gradient(to right bottom, #6199ec, #6e90d2, #7488b8, #77809f, #767987);
+            line-height: 1.6;
+        }
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 0 1.5rem;
+            overflow: hidden;
+        }
+        h1, h2, h3 {
+            margin-bottom: 1.5rem;
+            color: #bbbbbb;
+        }
+        p {
+            margin-bottom: 1.5rem;
+        }
+        a {
+            text-decoration: none;
+        }
+        .buttonClass {
+            padding-left: 1.8rem;
+            padding-top: 0.5rem;
+            position: fixed;
+            top: 0px;
+            left: -5px;
+            font-size:15px;
+            font-family:Arial;
+            width:14rem;
+            height:2.5rem;
+            border-width:1px;
+            color:#fff;
+            border-color:rgba(146, 151, 151, 1);
+            font-weight:bold;
+            border-top-left-radius:8px;
+            border-top-right-radius:8px;
+            border-bottom-left-radius:8px;
+            border-bottom-right-radius:8px;
+            box-shadow: 0px 10px 14px -7px rgba(99, 100, 100, 1);
+            text-shadow: 0px 1px 0px rgba(85, 87, 87, 1);
+            background:linear-gradient(rgba(156, 156, 156, 1), rgba(77, 77, 77, 1));
+        }
+        .buttonClass:hover {
+            background: linear-gradient(rgba(77, 77, 77, 1), rgba(156, 156, 156, 1));
+        }  
+        ul {
+            margin-bottom: 1.5rem;
+            list-style-type: none;
+        }
+        li {
+            margin-bottom: 1rem;
+        }
+        @media screen and (min-width: 768px) {
+            .flex-container {
+                display: flex;
+                justify-content: space-between;
+            }
+            .flex-container > div {
+                width: 48%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <p><a href="https://carterross.dev/chess/" class="buttonClass">← back to main menu</a></p>
+    <header>
+        <h1>How to Play</h1>
+    </header>
+
+    <section class="container">
+        <h2>Basic Rules</h2>
+        <div class="flex-container">
+            <div>
+                <h3>Objective</h3>
+                <p>
+                    The main objective in chess is to checkmate your opponent's king. T
+                    his means the king is in a position to be captured (in check), and there is no legal move to prevent the capture.
+                </p>
+            </div>
+            <div>
+                <h3>Board Setup</h3>
+                <p>
+                    The chessboard consists of 64 squares, arranged in an 8x8 grid. 
+                    Each player starts with 16 pieces: one king, one queen, two rooks, two knights, two bishops, and eight pawns.
+                </p>
+            </div>
+        </div>
+
+        <h2>How the Pieces Move</h2>
+        <ul>
+            <li>
+                <h3>King</h3>
+                <p>The king moves one square in any direction.</p>
+            </li>
+            <li>
+                <h3>Queen</h3>
+                <p>The queen can move any number of squares along a rank, file, or diagonal.</p>
+            </li>
+            <li>
+                <h3>Rook</h3>
+                <p>The rook can move any number of squares along a rank or file.</p>
+            </li>
+            <li>
+                <h3>Bishop</h3>
+                <p>The bishop can move any number of squares diagonally.</p>
+            </li>
+            <li>
+                <h3>Knight</h3>
+                <p>
+                    The knight moves to any of the squares immediately adjacent, 
+                    followed by a square that is one step further in the same direction, making an "L" shape.
+                </p>
+            </li>
+            <li>
+                <h3>Pawn</h3>
+                <p>The pawn moves forward one square, but captures diagonally. On its first move, a pawn may advance two squares forward.</p>
+            </li>
+        </ul>
+    
+        <h2>Special Moves</h2>
+        <ul>
+            <li>
+                <h3>Castling</h3>
+                <p>
+                    Castling is a special move that involves the king and one of the rooks. 
+                    The king moves two squares toward the rook, and the rook moves to the square the king crossed.
+                </p>
+            </li>
+            <li>
+                <h3>En Passant</h3>
+                <p>
+                    En passant is a special pawn capture that can only occur when a pawn moves two squares forward 
+                    from its starting position and lands next to an opponent's pawn. The opponent's pawn can then capture the first pawn 
+                    as if it had only moved one square forward.
+                </p>
+            </li>
+            <li>
+                <h3>Promotion</h3>
+                <p>
+                    When a pawn reaches the opposite side of the board, it can be promoted to any other piece 
+                    (except a king) regardless of the number of pieces of that type already on the board.
+                </p>
+            </li>
+        </ul>
+    
+        <h2>Winning the Game</h2>
+        <p>
+            The game is won by putting the opponent's king in a position where it cannot escape capture (checkmate). 
+            The game can also end in a draw under specific circumstances, such as stalemate, insufficient material, or threefold repetition.
+        </p>
+    
+    </section>
+</body>
+</html>    
