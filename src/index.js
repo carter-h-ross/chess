@@ -22,7 +22,6 @@ function log_board(){
       }      
     }
   }
-  console.log(result);
 }
 
 function encode_board(op="") {
@@ -54,7 +53,6 @@ function encode_board(op="") {
       }
     }
   }
-  console.log(result);
   return result;
 }
 
@@ -96,7 +94,6 @@ function decode_board(code) {
       i += 2;
     }
   }
-  console.log("result of decoded board: ", result);
   return result;
 }
 
@@ -115,15 +112,12 @@ function debug_board(moves) {
       }
     }
   }
-  console.log(result);
 }
 
 function findKing(team) {
-  console.log(`team king: ${team}k`);
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
       if (board[r][c].id == `${team}k`) {
-        console.log(`Found: ${r},${c}`)
         return [r,c];
       }
     }
@@ -322,7 +316,6 @@ class Spot {
     let moves = [];
     let piece = this.piece;
     let id = this.id;
-    console.log("king location when finding move: ", kingLoc)
 
     // finds moves for white pawns
     if(id == "wp") {
@@ -617,19 +610,12 @@ class Spot {
       ic = [1,1,0,-1,-1,-1, 0, 1];
       for (let i = 0;i < 8;i++) {
         if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 && board[r+ir[i]][c+ic[i]].team == "-") {
-          console.log("space empty");
           if (!(board[r+ir[i]][c+ic[i]].isCheck())) {
             moves.push([r+ir[i],c+ic[i]]);
           }
         }
       }
     }
-
-    log_board();
-    console.log(`id: ${id} | location: (${r},${c})`);
-    console.log(moves);
-    debug_board(moves);
-    console.log("<-------------------------------------------------------------------------->");
     return moves;
   } // end of moves
 }
@@ -828,13 +814,11 @@ function goToIngameMenu() {
 }
 
 function gotToMatchMenu() {
-  console.log("gotToMatchMenu")
   matchMenuDiv.style.display = "flex";
   ingameMenuDiv.style.display = "none";
 }
 
 function leaveMatchMenu() {
-  console.log("leaveMatchMenu")
   matchMenuDiv.style.display = "none";
   ingameMenuDiv.style.display = "flex";
 }
@@ -851,7 +835,6 @@ signupForm.addEventListener('submit', (e) => {
   if (username != null && username !== "must enter when creating account") {
     createUserWithEmailAndPassword(auth, email, password)
       .then(cred => {
-        console.log('user created:', cred.user, "userId:", cred.user.id)
         signupForm.reset()
         userId = cred.user.uid;
         goToIngameMenu();
@@ -872,6 +855,11 @@ logoutButton.addEventListener('click', () => {
     .then(() => {
       console.log('user signed out')
       goToMainMenu();
+      if (localStorage.getItem("savedEmail") != null && localStorage.getItem("savedPassword") != null && localStorage.getItem("savedUsername") != null) {
+        document.querySelector(".email-input").value = localStorage.getItem("savedEmail");
+        document.querySelector(".password-input").value = localStorage.getItem("savedPassword");
+        document.querySelector(".username-input").value = localStorage.getItem("savedUsername");
+      }
     })
     .catch(err => {
       console.log(err.message)
@@ -887,12 +875,10 @@ loginForm.addEventListener('submit', (e) => {
   const username = loginForm.username.value
 
   if (rememberMe) {
-    console.log("login details remembered after logging in");
     localStorage.setItem("savedEmail", email);
     localStorage.setItem("savedPassword", password);
     localStorage.setItem("savedUsername", username);
   } else {
-    console.log("login details not remembered after logging in");
     localStorage.removeItem("savedEmail");
     localStorage.removeItem("savedPassword");
     localStorage.removeItem("savedUsername");
@@ -900,7 +886,6 @@ loginForm.addEventListener('submit', (e) => {
   
   signInWithEmailAndPassword(auth, email, password)
     .then(cred => {
-      console.log('user logged in:', cred.user)
       loginForm.reset()
       userId = cred.user.uid;
       goToIngameMenu();
@@ -965,9 +950,7 @@ function getMatchRef() {
 var matchRef = `games/${username}-${opponentName}`;
 
 function updateGameBoardDatabase(op = " ") {
-  console.log(op);
   matchRef = getMatchRef();
-  console.log(encode_board());
   set(ref(dr, matchRef), {
     board: encode_board()
   })
@@ -986,11 +969,6 @@ const setupMatchRefListener = () => {
     onValue(ref(dr, matchRef), (snapshot) => {
       if (isMatchRefInitialized) {
         const boardData = snapshot.val();
-        console.log("baord data: ", boardData)
-        console.log("board data[]: ", boardData["board"])
-        console.log("decoded board: ", decode_board(boardData["board"]))
-        console.log(board)
-        console.log(matchRef)
         if (boardData != null) {
           board = decode_board(boardData["board"]);
           updateBoardMeshes();
@@ -1014,7 +992,6 @@ const removeMatchRefListener = () => {
 function createMatch() {
   team = "w";
   opponentName = document.querySelector(".opponent-username-input").value;
-  console.log("opponent name after creating match is: ", opponentName);
   matchRef = getMatchRef();
   setupMatchRefListener();
   updateGameBoardDatabase("newMatch");
@@ -1028,7 +1005,6 @@ function joinMatch() {
   get(ref(dr, matchRef)).then((snapshot) => {
     if (!(snapshot.exists())) {
       document.querySelector(".opponent-username-input").value = "game not created";
-      console.log("game not created")
     } else {
       setupMatchRefListener();
       gotToMatchMenu();
@@ -1066,12 +1042,13 @@ function gameOver(winner) {
 
 // threejs imports
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const gltfLoader = new GLTFLoader();
+const textureLoader = new THREE.TextureLoader();
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector("#bg"),
 });
@@ -1099,10 +1076,22 @@ class piece3d {
 
 //board pieces placed ** currently for development only cubes **
 var meshes = [];
+const pieceModels = {
+  'wp': 'pieces/white-pawn.gltf',
+  'wk': 'pieces/white-king.gltf',
+  'wq': 'pieces/white-queen.gltf',
+  'wr': 'pieces/white-rook.gltf',
+  'wb': 'pieces/white-bishop.gltf',
+  'wn': 'pieces/white-knight.gltf',
+  'bp': 'pieces/black-pawn.gltf',
+  'bk': 'pieces/black-king.gltf',
+  'bq': 'pieces/black-queen.gltf',
+  'br': 'pieces/black-rook.gltf',
+  'bb': 'pieces/black-bishop.gltf',
+  'bn': 'pieces/black-knight.gltf',
+};
 
 function updateBoardMeshes() {
-
-  // looks to see if the king is in check
   kingLoc = findKing(team);
   if (board[kingLoc[0]][kingLoc[1]].isCheck()) {
     inCheckLoc = [kingLoc[0]][kingLoc[1]];
@@ -1113,52 +1102,35 @@ function updateBoardMeshes() {
     }
   }
 
-  for (let r = 0; r < 8;r++) {
+  for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
+      let needToPlace = true;
       for (let i = 0; i < meshes.length; i++) {
-        if (meshes[i].r == r && meshes[i].c == c) {
+        if (meshes[i].r == r && meshes[i].c == c && board[r][c].team == "-") {
+          console.log("removed piece")
           meshes[i].removePiece();
         }
+        if (meshes[i].r == r && meshes[i].c == c && board[r][c].team != "-") {
+          needToPlace = false;
+        }
       }
-      if (board[r][c].team == "w") {
-        if (board[r][c].piece == "p") {
-          var cubeGeometry = new THREE.BoxGeometry(3,3,3);
-        } else if (board[r][c].piece == "k") {
-          var cubeGeometry = new THREE.BoxGeometry(3,10,3);
-        } else if (board[r][c].piece == "q") {
-          var cubeGeometry = new THREE.CylinderGeometry(1.5,1.5,10);
-        } else if (board[r][c].piece == "r") {
-          var cubeGeometry = new THREE.CylinderGeometry(1,1.75,6);
-        } else if (board[r][c].piece == "b") {
-          var cubeGeometry = new THREE.CylinderGeometry(1.75,1,6);
-        } else if (board[r][c].piece == "n") {
-          var cubeGeometry = new THREE.ConeGeometry(1.75,6);
-        }
-        let cubeMaterial = new THREE.MeshBasicMaterial({color : 0xdaa06d});
-        meshes.push(new piece3d(r,c,new THREE.Mesh(cubeGeometry, cubeMaterial)));
-        meshes[meshes.length-1].mesh.userData.index = {r,c};
-        meshes[meshes.length-1].mesh.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
-        scene.add(meshes[meshes.length-1].mesh);
-      } else if (board[r][c].team == "b") {
-        if (board[r][c].piece == "p") {
-          var cubeGeometry = new THREE.BoxGeometry(3,3,3);
-        } else if (board[r][c].piece == "k") {
-          var cubeGeometry = new THREE.BoxGeometry(3,10,3);
-        } else if (board[r][c].piece == "q") {
-          var cubeGeometry = new THREE.CylinderGeometry(1.5,1.5,10);
-        } else if (board[r][c].piece == "r") {
-          var cubeGeometry = new THREE.CylinderGeometry(1,1.75,6);
-        } else if (board[r][c].piece == "b") {
-          var cubeGeometry = new THREE.CylinderGeometry(1.75,1,6);
-        } else if (board[r][c].piece == "n") {
-          var cubeGeometry = new THREE.ConeGeometry(1.75,6);
-        }
-        let cubeMaterial = new THREE.MeshBasicMaterial({color : 0x5c4033});
-        let cubeMesh = new THREE.Mesh(cubeGeometry, cubeMaterial);
-        meshes.push(new piece3d(r,c,new THREE.Mesh(cubeGeometry, cubeMaterial)));
-        meshes[meshes.length-1].mesh.userData.index = {r,c};
-        meshes[meshes.length-1].mesh.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
-        scene.add(meshes[meshes.length-1].mesh);
+
+      if (board[r][c].team !== null && board[r][c].team != "-" && needToPlace) {
+        console.log("loaded a mesh");
+        const pieceKey = board[r][c].team + board[r][c].piece;
+        const modelPath = pieceModels[pieceKey];
+        gltfLoader.load(modelPath, function(gltf) {
+          const model = gltf.scene;
+          const scaleFactor = 0.5;
+          model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+          model.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
+          model.userData.index = { r, c };
+          const piece = new piece3d(r, c, model);
+          meshes.push(piece);
+          scene.add(model);
+        }, undefined, function(error) {
+          console.error(error);
+        });
       }
     }
   }
@@ -1182,7 +1154,6 @@ function highlightPlane(r,c,color="yellow") {
 }
 
 function resetPlanes() {
-  console.log("resetPlanes");
   for (let i = 0; i < 8;i++) {
     for (let j = 0; j < 8; j++) {
       if (inCheck && kingLoc[0] == i && kingLoc[1] == j) {
@@ -1206,19 +1177,20 @@ function onCanvasClick(event) {
   mouse.y = -((event.clientY - canvasBounds.top) / canvasBounds.height) * 2 + 1;
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera(mouse, camera);
-  const intersects = raycaster.intersectObjects(scene.children);
+  const intersects = raycaster.intersectObjects(scene.children, true); // Set the second parameter to true to check all descendants of an object
+
   if (intersects.length > 0) {
     const clickedMesh = intersects[0].object;
-    console.log(`Clicked mesh position: (${clickedMesh.position.x}, ${clickedMesh.position.y}, ${clickedMesh.position.z})`);
-    const clickedMeshIndex = clickedMesh.userData.index;
+    let targetObject = clickedMesh;
+    while (!targetObject.userData.index && targetObject.parent) {
+      targetObject = targetObject.parent;
+    }
+    const clickedMeshIndex = targetObject.userData.index;
     if (clickedMeshIndex) {
       const { r, c } = clickedMeshIndex;
-      console.log(`Clicked mesh index: (${r}, ${c})`);
-      prevClickedMesh = clickedMesh;
-
+      prevClickedMesh = targetObject;
       /* ------------------------------------------------------------ game logic ----------------------------------------------------------------------*/
       if (state == "unselected") {
-        console.log(board[r][c])
         if (board[r][c].team == team && turn == team) {
           if (board[r][c].team != "-") {
             resetPlanes();
@@ -1232,8 +1204,8 @@ function onCanvasClick(event) {
       } else if (state == "selected") {
         for (let i = 0; i < availableMoves.length; i++) {
           if (availableMoves[i][0] == r && availableMoves[i][1] == c) {
-            board[r][c] = new Spot(r,c,board[rSelected][cSelected].id);
-            board[rSelected][cSelected] = new Spot(rSelected,cSelected,"-=");
+            board[r][c] = new Spot(r, c, board[rSelected][cSelected].id);
+            board[rSelected][cSelected] = new Spot(rSelected, cSelected, "-=");
             scene.remove();
             log_board();
             encodedBoard = encode_board();
@@ -1244,12 +1216,12 @@ function onCanvasClick(event) {
         state = "unselected";
       }
       /* ----------------------------------------------------------------------------------------------------------------------------------------------*/
-
     } else {
 
     }
   }
 }
+
 
 var planesArray = Array(8).fill().map(() => Array(8).fill(null));
 var altCounter = 1;
@@ -1280,11 +1252,25 @@ for(let r = 0; r < 8; r++) {
     planesArray[r][c] = planeMesh;
   }
 }
-console.log(planesArray);
 
 // ambient scene light
+/*
 const ambientLight = new THREE.AmbientLight(0xffffff)
 scene.add(ambientLight);
+*/
+
+// directional light
+function addPointLight(color, intensity, distance, position) {
+  const pointLight = new THREE.PointLight(color, intensity, distance);
+  pointLight.position.set(position.x, position.y, position.z);
+  scene.add(pointLight);
+}
+
+addPointLight(0xffffff, 3, 80, new THREE.Vector3(30, 25, 0));
+addPointLight(0xffffff, 3, 80, new THREE.Vector3(-30, 25, 0));
+addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, 30));
+addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, -30));
+
 
 function rgbToHex(r, g, b) {
   var redHex = r.toString(16).padStart(2, '0');
