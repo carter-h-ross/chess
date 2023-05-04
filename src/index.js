@@ -732,7 +732,8 @@ import {
   ref, 
   onValue, 
   set,
-  get
+  get,
+  push
 } from "firebase/database";
 import {
   getAuth,
@@ -943,17 +944,16 @@ function getMatchRef() {
 
 var matchRef = `games/${username}-${opponentName}`;
 
-function updateGameBoardDatabase(op = " ") {
-  matchRef = getMatchRef();
-  set(ref(dr, matchRef), {
-    board: encode_board()
-  })
-  .then(() => {
-    
-  })
-  .catch((error) => {
-    console.log("Error writing data to Realtime Database:", error.message);
-  });
+function updateGameBoardDatabase() {
+  const matchRef = getMatchRef();
+  const boardRef = ref(dr, `${matchRef}/board`);
+  set(boardRef, encode_board())
+    .then(() => {
+      
+    })
+    .catch((error) => {
+      console.log("Error writing data to Realtime Database:", error.message);
+    });
 }
 
 // listen for changes in the database of game board
@@ -1009,6 +1009,7 @@ function createMatch() {
   opponentName = document.querySelector(".opponent-username-input").value;
   matchRef = getMatchRef();
   setupMatchRefListener();
+  initChat();
   updateGameBoardDatabase("newMatch");
   gotToMatchMenu();
 }
@@ -1022,6 +1023,7 @@ function joinMatch() {
       document.querySelector(".opponent-username-input").value = "game not created";
     } else {
       setupMatchRefListener();
+      initChat();
       gotToMatchMenu();
     }
   })
@@ -1047,6 +1049,50 @@ function gameOver(winner) {
   console.log('game over - winner: ', winner);
 }
 
+// ingame messaging
+async function sendChatMessage(message, username, gameID) {
+  const chatID = push(ref(dr, `${gameID}/chat`)).key;
+  const chatData = {
+    message: message,
+    timestamp: Date.now(),
+    username: username,
+  };
+  await set(ref(dr, `${gameID}/chat/${chatID}`), chatData);
+}
+
+function listenForNewMessages(gameID, callback) {
+  const chatRef = ref(dr, `${gameID}/chat`);
+  onValue(chatRef, (snapshot) => {
+    const messages = snapshot.val();
+    callback(messages);
+  });
+}
+
+function initChat() {
+  listenForNewMessages(getMatchRef(), (messages) => {
+    const chatMessages = document.getElementById("chatMessages");
+    chatMessages.innerHTML = "";
+
+    for (const messageKey in messages) {
+      const messageData = messages[messageKey];
+      const messageElement = document.createElement("div");
+      messageElement.textContent = `${messageData.username}: ${messageData.message}`;
+      chatMessages.appendChild(messageElement);
+    }
+  });
+
+  const chatInput = document.getElementById("chatInput");
+  const sendButton = document.getElementById("sendButton");
+
+  sendButton.addEventListener("click", () => {
+    const message = chatInput.value;
+    if (message) {
+      sendChatMessage(message, username, getMatchRef());
+      chatInput.value = "";
+    }
+  });
+}
+
 /*-------------------------------------- three js section ---------------------------------------*/
 
 // threejs imports
@@ -1057,7 +1103,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const gltfLoader = new GLTFLoader();
-const textureLoader = new THREE.TextureLoader();
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector("#bg"),
 });
@@ -1287,7 +1332,6 @@ addPointLight(0xffffff, 3, 80, new THREE.Vector3(30, 25, 0));
 addPointLight(0xffffff, 3, 80, new THREE.Vector3(-30, 25, 0));
 addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, 30));
 addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, -30));
-
 
 function rgbToHex(r, g, b) {
   var redHex = r.toString(16).padStart(2, '0');

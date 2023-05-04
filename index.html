@@ -197,6 +197,40 @@
             padding:6px;  
             margin-bottom: 10px;
         }
+
+        .chat-messages {
+            height: 200px;
+            width: 100%;
+            overflow-y: hidden; /* hide scrollbar */
+            padding: 5px;
+            margin-bottom: 5px;
+            /* From https://css.glass */
+background: rgba(144, 191, 249, 0.3);
+border-radius: 16px;
+box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+backdrop-filter: blur(13.1px);
+-webkit-backdrop-filter: blur(13.1px);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .chat-messages:hover {
+            overflow-y: auto; /* show scrollbar on hover */
+        }
+        .chat {
+            width: 100%;
+            margin-top: 5px;
+            display: flex;
+            justify-content: center;
+        }
+        .send-button-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 5px;
+        }
+        .chat input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
         .main-menu-input:focus { 
             outline:none; 
         }  
@@ -390,9 +424,17 @@
 
         <div class="main-menu match-menu">
 
-            <button class="leave-game main-menu-button">leave game</button>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat">
+                <input type="text" id="chatInput" class="main-menu-input" placeholder="Type your message" />
+            </div>
+            <div class="send-button-wrapper">
+                <button id="sendButton" class="main-menu-button">send</button>
+            </div>
+            <button class="leave-game main-menu-button">leave game</button>              
 
         </div>
+
 
     </div>
 
