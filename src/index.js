@@ -914,12 +914,6 @@ leaveMatchButton.addEventListener("click", (e) => {
   leaveMatch();
 });
 
-const resetMatchButton = document.querySelector(".reset-game");
-resetMatchButton.addEventListener("click", (e) => {
-  e.preventDefault();
-  resetMatch();
-});
-
 // remeber user details or not: 
 var rememberMe = true;
 document.querySelector('.control-checkbox').checked = false;
@@ -964,13 +958,33 @@ function updateGameBoardDatabase(op = " ") {
 
 // listen for changes in the database of game board
 let isMatchRefInitialized = false;
+var prevBoard = null;
+var piecesToAdd = [
+  [0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],
+  [1,0],[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],
+  [6,0],[6,1],[6,2],[6,3],[6,4],[6,5],[6,6],[6,7],
+  [7,0],[7,1],[7,2],[7,3],[7,4],[7,5],[7,6],[7,7],
+];
 const setupMatchRefListener = () => {
   if (matchRef && !isMatchRefInitialized) {
-    onValue(ref(dr, matchRef), (snapshot) => {
+    onValue(ref(dr, matchRef), (snapshot) =>  {
       if (isMatchRefInitialized) {
+        if (turn != team) {
+          console.log("loaded previous board inside of math ref listener")
+          prevBoard = copy2DArray(board)
+        }
         const boardData = snapshot.val();
         if (boardData != null) {
+          piecesToAdd = [];
           board = decode_board(boardData["board"]);
+          for (let r = 0;r < 8;r++) {
+            for (let c = 0;c < 8;c++) {
+              console.log(prevBoard[r][c].piece, "|", board[r][c].piece, "|", prevBoard[r][c].piece != board[r][c].piece)
+              if (prevBoard[r][c].piece != board[r][c].piece && board[r][c].team != "-") {
+                piecesToAdd.push([r,c]);
+              }
+            }
+          }
           updateBoardMeshes();
         }
       } else {
@@ -980,6 +994,7 @@ const setupMatchRefListener = () => {
     isMatchRefInitialized = true;
   }
 };
+
 
 const removeMatchRefListener = () => {
   if (matchRef && isMatchRefInitialized) {
@@ -1021,12 +1036,6 @@ function leaveMatch() {
   removeMatchRefListener();
 }
 
-function resetMatch() {
-  board = decode_board("bbrbnbbbqbkbbbnbrbpbpbpbpbpbpbpbp32wpwpwpwpwpwpwpwpwrwnwbwqwkwbwnwr");
-  updateGameBoardDatabase();
-  state = "unselected";
-}
-
 // subscribing to auth changes
 const unsubAuth = onAuthStateChanged(auth, (user) => {
   console.log('user status changed:', user);
@@ -1064,10 +1073,11 @@ const orbit = new OrbitControls(camera, renderer.domElement);
 orbit.update();
 
 class piece3d {
-  constructor(r,c,mesh) {
+  constructor(r,c,mesh,piece) {
     this.mesh = mesh;
     this.r = r;
     this.c = c;
+    this.piece = piece;
   }
   removePiece() {
     scene.remove(this.mesh);
@@ -1094,9 +1104,9 @@ const pieceModels = {
 function updateBoardMeshes() {
   kingLoc = findKing(team);
   if (board[kingLoc[0]][kingLoc[1]].isCheck()) {
-    inCheckLoc = [kingLoc[0]][kingLoc[1]];
+    inCheckLoc = [kingLoc[0], kingLoc[1]];
     inCheck = true;
-    highlightPlane(kingLoc[0],kingLoc[1],"red");
+    highlightPlane(kingLoc[0], kingLoc[1], "red");
     if (board[kingLoc[0]][kingLoc[1]].find_moves() == []) {
       gameOver(opp[team]);
     }
@@ -1106,38 +1116,43 @@ function updateBoardMeshes() {
     for (let c = 0; c < 8; c++) {
       let needToPlace = true;
       for (let i = 0; i < meshes.length; i++) {
-        if (meshes[i].r == r && meshes[i].c == c && board[r][c].team == "-") {
-          console.log("removed piece")
+        if (meshes[i].r == r && meshes[i].c == c && board[r][c].id != meshes[i].piece) {
+          console.log("removed pece because: board piece is: ", board[r][c].piece, " and mesh piece is: ", meshes[i].piece);
+          console.log("removed piece");
           meshes[i].removePiece();
+          meshes.splice(i, 1);
         }
-        if (meshes[i].r == r && meshes[i].c == c && board[r][c].team != "-") {
-          needToPlace = false;
-        }
-      }
-
-      if (board[r][c].team !== null && board[r][c].team != "-" && needToPlace) {
-        console.log("loaded a mesh");
-        const pieceKey = board[r][c].team + board[r][c].piece;
-        const modelPath = pieceModels[pieceKey];
-        gltfLoader.load(modelPath, function(gltf) {
-          const model = gltf.scene;
-          const scaleFactor = 0.5;
-          model.scale.set(scaleFactor, scaleFactor, scaleFactor);
-          model.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
-          model.userData.index = { r, c };
-          const piece = new piece3d(r, c, model);
-          meshes.push(piece);
-          scene.add(model);
-        }, undefined, function(error) {
-          console.error(error);
-        });
       }
     }
+  }
+
+  console.log("pieces to add: ", piecesToAdd);
+  for (let i = 0; i < piecesToAdd.length; i++) {
+    console.log("loaded a mesh");
+    let r = piecesToAdd[i][0];
+    let c = piecesToAdd[i][1];
+    console.log("r: " + r + ", c: " + c);
+    const pieceKey = board[r][c].team + board[r][c].piece;
+    const modelPath = pieceModels[pieceKey];
+    console.log("modelPath: " + modelPath, "pieceKey: " + pieceKey);
+
+    gltfLoader.load(modelPath, function(gltf) {
+      const model = gltf.scene;
+      const scaleFactor = 0.5;
+      model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+      model.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
+      model.userData.index = { r, c };
+      const piece = new piece3d(r, c, model, pieceKey);
+      meshes.push(piece);
+      scene.add(model);
+    }, undefined, function(error) {
+      console.error(error);
+    });
   }
 }
 
 // board location planes for raycast and game logic
-let prevClickedMesh = null;
+var prevClickedMesh = null;
 
 function highlightMoves(moves) {
   for (let i = 0; i < moves.length; i++) {
@@ -1204,6 +1219,7 @@ function onCanvasClick(event) {
       } else if (state == "selected") {
         for (let i = 0; i < availableMoves.length; i++) {
           if (availableMoves[i][0] == r && availableMoves[i][1] == c) {
+            prevBoard = copy2DArray(board);
             board[r][c] = new Spot(r, c, board[rSelected][cSelected].id);
             board[rSelected][cSelected] = new Spot(rSelected, cSelected, "-=");
             scene.remove();
@@ -1211,6 +1227,7 @@ function onCanvasClick(event) {
             encodedBoard = encode_board();
             updateGameBoardDatabase();
             state = "unselected";
+            resetPlanes();
           }
         }
         state = "unselected";
