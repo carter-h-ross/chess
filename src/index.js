@@ -824,6 +824,10 @@ function leaveMatchMenu() {
   ingameMenuDiv.style.display = "flex";
 }
 
+function hideAllMenus() {
+  mainMenuDiv.style.display = "none";
+}
+
 // sign up and login
 const signupForm = document.querySelector('.signup-login')
 signupForm.addEventListener('submit', (e) => {
@@ -894,6 +898,16 @@ loginForm.addEventListener('submit', (e) => {
     .catch(err => {
       console.log(err.message)
     })
+})
+
+// playing offline button
+var mode = "online";
+const localMultiplayerButton = document.querySelector(".local-multiplayer-button");
+localMultiplayerButton.addEventListener("click", () => {
+hideAllMenus();
+  team = "w";
+  turn = "w";
+  mode = "offline";
 })
 
 // buttons after logging in
@@ -969,8 +983,7 @@ const setupMatchRefListener = () => {
   if (matchRef && !isMatchRefInitialized) {
     onValue(ref(dr, matchRef), (snapshot) =>  {
       if (isMatchRefInitialized) {
-        if (turn != team) {
-          console.log("loaded previous board inside of math ref listener")
+        if (turn != team || mode == "offline") {
           prevBoard = copy2DArray(board)
         }
         const boardData = snapshot.val();
@@ -1270,9 +1283,25 @@ function onCanvasClick(event) {
             scene.remove();
             log_board();
             encodedBoard = encode_board();
-            updateGameBoardDatabase();
+            if (mode == "online") {
+              updateGameBoardDatabase();
+            }
             state = "unselected";
             resetPlanes();
+            if (mode == "offline") {
+              team = opp[team];
+              turn = team;
+              piecesToAdd = [];
+              for (let r = 0;r < 8;r++) {
+                for (let c = 0;c < 8;c++) {
+                  console.log(prevBoard[r][c].piece, "|", board[r][c].piece, "|", prevBoard[r][c].piece != board[r][c].piece)
+                  if (prevBoard[r][c].piece != board[r][c].piece && board[r][c].team != "-") {
+                    piecesToAdd.push([r,c]);
+                  }
+                }
+              }
+              updateBoardMeshes();
+            }
           }
         }
         state = "unselected";
