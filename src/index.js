@@ -1392,18 +1392,20 @@ function rgbToHex(r, g, b) {
 
 // background
 let backgrounds = {
-  "white": "white_background.jpeg",
   "space clouds": "space_clouds.jpg", 
   "mountain": "mountain.jpg",
   "falling lights": "falling_lights.jpg",
+  "white": "white_background.jpeg",
   "night sky": "night_sky.jpg",
   "nebula": "nebula.jpg",
   "future_abstract": "future_abstract.jpg",
+  "green blue nebula": "green_blue_nebula.jpg",
   "gold_abstract": "gold_abstract.jpg",
+  "blue pink nebula": "blue_pink_nebula.jpg",
   "colors": "colors.jpg",
 }
 let keys = Object.keys(backgrounds);
-let currentBackgroundIndex = 8;
+let currentBackgroundIndex = 10;
 
 // Set the initial background
 let background_texture = new THREE.TextureLoader().load(backgrounds[keys[currentBackgroundIndex]]);
