@@ -1401,11 +1401,10 @@ let backgrounds = {
   "future_abstract": "future_abstract.jpg",
   "green blue nebula": "green_blue_nebula.jpg",
   "gold_abstract": "gold_abstract.jpg",
-  "blue pink nebula": "blue_pink_nebula.jpg",
   "colors": "colors.jpg",
 }
 let keys = Object.keys(backgrounds);
-let currentBackgroundIndex = 10;
+let currentBackgroundIndex = 9;
 
 // Set the initial background
 let background_texture = new THREE.TextureLoader().load(backgrounds[keys[currentBackgroundIndex]]);
@@ -1413,6 +1412,9 @@ scene.background = background_texture;
 
 // Listen to keydown event
 window.addEventListener('keydown', function(event) {
+  if (key !== 'ArrowUp' && key !== 'ArrowDown') {
+    return;
+  }
   switch (event.key) {
     case 'ArrowUp':
       currentBackgroundIndex++;
