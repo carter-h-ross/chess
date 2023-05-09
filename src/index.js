@@ -1412,7 +1412,7 @@ scene.background = background_texture;
 
 // Listen to keydown event
 window.addEventListener('keydown', function(event) {
-  if (key !== 'ArrowUp' && key !== 'ArrowDown') {
+  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
     return;
   }
   switch (event.key) {
