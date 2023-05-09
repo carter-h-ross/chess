@@ -651,7 +651,6 @@ function getNextBoard(r1,c1,r2,c2) {
   let result = copy2DArray(board)
   result[r2][c2] = new Spot(r2,c2,`${result[r1][c1].team}${result[r1][c1].piece}`);
   result[r1][c1] = new Spot(r1,c1,"-=");
-  console.log("result of copied board with next possiable move: ",result)
   return result;
 }
 
@@ -904,10 +903,11 @@ loginForm.addEventListener('submit', (e) => {
 var mode = "online";
 const localMultiplayerButton = document.querySelector(".local-multiplayer-button");
 localMultiplayerButton.addEventListener("click", () => {
-hideAllMenus();
+  hideAllMenus();
   team = "w";
   turn = "w";
   mode = "offline";
+  goToTeamCamera(team);
 })
 
 // buttons after logging in
@@ -992,8 +992,7 @@ const setupMatchRefListener = () => {
           board = decode_board(boardData["board"]);
           for (let r = 0;r < 8;r++) {
             for (let c = 0;c < 8;c++) {
-              console.log(prevBoard[r][c].piece, "|", board[r][c].piece, "|", prevBoard[r][c].piece != board[r][c].piece)
-              if (prevBoard[r][c].piece != board[r][c].piece && board[r][c].team != "-") {
+              if (prevBoard[r][c].id != board[r][c].id && board[r][c].team != "-") {
                 piecesToAdd.push([r,c]);
               }
             }
@@ -1008,7 +1007,6 @@ const setupMatchRefListener = () => {
   }
 };
 
-
 const removeMatchRefListener = () => {
   if (matchRef && isMatchRefInitialized) {
     off(matchRef);
@@ -1019,6 +1017,7 @@ const removeMatchRefListener = () => {
 // creating and joining a match
 function createMatch() {
   team = "w";
+  goToTeamCamera(team);
   opponentName = document.querySelector(".opponent-username-input").value;
   matchRef = getMatchRef();
   setupMatchRefListener();
@@ -1030,6 +1029,7 @@ function createMatch() {
 function joinMatch() {
   opponentName = document.querySelector(".opponent-username-input").value;
   team = "b";
+  goToTeamCamera(team);
   matchRef = getMatchRef();
   get(ref(dr, matchRef)).then((snapshot) => {
     if (!(snapshot.exists())) {
@@ -1049,6 +1049,7 @@ function leaveMatch() {
   leaveMatchMenu();
   isMatchRefInitialized = false;
   removeMatchRefListener();
+  startSpin();
 }
 
 // subscribing to auth changes
@@ -1124,7 +1125,34 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 camera.position.z = 20;
-camera.position.y = 10;
+camera.position.y = 30;
+camera.position.x = 20;
+camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+function goToTeamCamera(team) {
+  stopSpin();
+  if (team == "w") {
+    camera.position.z = 30;
+    camera.position.y = 30;
+    if (mode == "online") {
+      camera.position.x = -5;
+      camera.lookAt(new THREE.Vector3(-5, 0, 0));
+    } else {
+      camera.position.x = 0;
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+  } else {
+    camera.position.z = -30;
+    camera.position.y = 30;
+    if (mode == "online") {
+      camera.position.x = 5;
+      camera.lookAt(new THREE.Vector3(5, 0, 0));
+    } else {
+      camera.position.x = 0;
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+  }
+}
 
 // orbit controls
 const orbit = new OrbitControls(camera, renderer.domElement);
@@ -1175,8 +1203,6 @@ function updateBoardMeshes() {
       let needToPlace = true;
       for (let i = 0; i < meshes.length; i++) {
         if (meshes[i].r == r && meshes[i].c == c && board[r][c].id != meshes[i].piece) {
-          console.log("removed pece because: board piece is: ", board[r][c].piece, " and mesh piece is: ", meshes[i].piece);
-          console.log("removed piece");
           meshes[i].removePiece();
           meshes.splice(i, 1);
         }
@@ -1184,15 +1210,11 @@ function updateBoardMeshes() {
     }
   }
 
-  console.log("pieces to add: ", piecesToAdd);
   for (let i = 0; i < piecesToAdd.length; i++) {
-    console.log("loaded a mesh");
     let r = piecesToAdd[i][0];
     let c = piecesToAdd[i][1];
-    console.log("r: " + r + ", c: " + c);
     const pieceKey = board[r][c].team + board[r][c].piece;
     const modelPath = pieceModels[pieceKey];
-    console.log("modelPath: " + modelPath, "pieceKey: " + pieceKey);
 
     gltfLoader.load(modelPath, function(gltf) {
       const model = gltf.scene;
@@ -1290,12 +1312,12 @@ function onCanvasClick(event) {
             resetPlanes();
             if (mode == "offline") {
               team = opp[team];
+              goToTeamCamera(team);
               turn = team;
               piecesToAdd = [];
               for (let r = 0;r < 8;r++) {
                 for (let c = 0;c < 8;c++) {
-                  console.log(prevBoard[r][c].piece, "|", board[r][c].piece, "|", prevBoard[r][c].piece != board[r][c].piece)
-                  if (prevBoard[r][c].piece != board[r][c].piece && board[r][c].team != "-") {
+                  if (prevBoard[r][c].id != board[r][c].id && board[r][c].team != "-") {
                     piecesToAdd.push([r,c]);
                   }
                 }
@@ -1312,7 +1334,6 @@ function onCanvasClick(event) {
     }
   }
 }
-
 
 var planesArray = Array(8).fill().map(() => Array(8).fill(null));
 var altCounter = 1;
@@ -1370,12 +1391,44 @@ function rgbToHex(r, g, b) {
 }
 
 // background
-const backgrounds = {
-  "white" : "white_background.jpeg",
+let backgrounds = {
+  "white": "white_background.jpeg",
+  "space clouds": "space_clouds.jpg", 
+  "mountain": "mountain.jpg",
+  "falling lights": "falling_lights.jpg",
+  "night sky": "night_sky.jpg",
+  "nebula": "nebula.jpg",
+  "future_abstract": "future_abstract.jpg",
+  "gold_abstract": "gold_abstract.jpg",
+  "colors": "colors.jpg",
 }
-var choice = "white";
-const background_texture = new THREE.TextureLoader().load(backgrounds[choice]);
+let keys = Object.keys(backgrounds);
+let currentBackgroundIndex = 8;
+
+// Set the initial background
+let background_texture = new THREE.TextureLoader().load(backgrounds[keys[currentBackgroundIndex]]);
 scene.background = background_texture;
+
+// Listen to keydown event
+window.addEventListener('keydown', function(event) {
+  switch (event.key) {
+    case 'ArrowUp':
+      currentBackgroundIndex++;
+      if (currentBackgroundIndex >= keys.length) {
+        currentBackgroundIndex = 0;
+      }
+      break;
+    case 'ArrowDown':
+      currentBackgroundIndex--;
+      if (currentBackgroundIndex < 0) {
+        currentBackgroundIndex = keys.length - 1;
+      }
+      break;
+  }
+  let newBackgroundTexture = new THREE.TextureLoader().load(backgrounds[keys[currentBackgroundIndex]]);
+  scene.background = newBackgroundTexture;
+});
+
 
 // chess board
 gltfLoader.load("chess_board/scene.gltf", function(gltf) {
@@ -1389,7 +1442,35 @@ gltfLoader.load("chess_board/scene.gltf", function(gltf) {
 updateBoardMeshes(decode_board(encode_board()));
 
 // main loop
+let spin = false;
+let angle = 0;
+let radius = 40;
+function stopSpin() {
+  spin = false;
+}
+function startSpin() {
+  spin = true;
+  camera.position.x = 0;
+  camera.position.z = 0;
+  camera.position.y = 2;
+}
+startSpin();
 function animate() {
+  
+  if (spin) {
+
+    /* spin around center
+    angle += 0.003;
+    camera.position.x = radius * Math.sin(angle);
+    camera.position.z = radius * Math.cos(angle);
+    camera.position.y = 20;
+    camera.lookAt(new THREE.Vector3(0, 10, 0));
+    */
+
+    angle += 0.003;
+    camera.lookAt(new THREE.Vector3(radius * Math.sin(angle), 10, radius * Math.cos(angle)));
+
+  }
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
