@@ -317,6 +317,19 @@ class Spot {
     let piece = this.piece;
     let id = this.id;
 
+    // checks for moves king can make
+    if (piece == "k") {
+      ir = [0,1,1, 1, 0,-1,-1,-1];
+      ic = [1,1,0,-1,-1,-1, 0, 1];
+      for (let i = 0;i < 8;i++) {
+        if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 && board[r+ir[i]][c+ic[i]].team == "-") {
+          if (!(board[r+ir[i]][c+ic[i]].isCheck())) {
+            moves.push([r+ir[i],c+ic[i]]);
+          }
+        }
+      }
+    }
+
     // finds moves for white pawns
     if(id == "wp") {
       if (r > 0) {
@@ -604,18 +617,6 @@ class Spot {
       }
     }
 
-    // checks for moves king can make
-    if (piece == "k") {
-      ir = [0,1,1, 1, 0,-1,-1,-1];
-      ic = [1,1,0,-1,-1,-1, 0, 1];
-      for (let i = 0;i < 8;i++) {
-        if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 && board[r+ir[i]][c+ic[i]].team == "-") {
-          if (!(board[r+ir[i]][c+ic[i]].isCheck())) {
-            moves.push([r+ir[i],c+ic[i]]);
-          }
-        }
-      }
-    }
     return moves;
   } // end of moves
 }
@@ -914,7 +915,7 @@ localMultiplayerButton.addEventListener("click", () => {
 const joinMatchButton = document.querySelector(".join-game");
 joinMatchButton.addEventListener("click", (e) => {
   e.preventDefault();
-  joinMatch();
+  joinMatch("b");
 });
 
 const createMatchButton = document.querySelector(".create-game");
@@ -927,6 +928,18 @@ const leaveMatchButton = document.querySelector(".leave-game");
 leaveMatchButton.addEventListener("click", (e) => {
   e.preventDefault();
   leaveMatch();
+});
+
+const resumeAsWhiteButton = document.querySelector(".resume-white");
+resumeAsWhiteButton.addEventListener("click", (e) => {
+  e.preventDefault();
+  joinMatch("w");
+});
+
+const resumeAsBlackButton = document.querySelector(".resume-black");
+resumeAsBlackButton.addEventListener("click", (e) => {
+  e.preventDefault();
+  joinMatch("b");
 });
 
 // remeber user details or not: 
@@ -1026,9 +1039,9 @@ function createMatch() {
   gotToMatchMenu();
 }
 
-function joinMatch() {
+function joinMatch(teamRequest="b") {
   opponentName = document.querySelector(".opponent-username-input").value;
-  team = "b";
+  team = teamRequest;
   goToTeamCamera(team);
   matchRef = getMatchRef();
   get(ref(dr, matchRef)).then((snapshot) => {
@@ -1038,6 +1051,7 @@ function joinMatch() {
       setupMatchRefListener();
       initChat();
       gotToMatchMenu();
+      updateBoardMeshes();
     }
   })
   .catch(error => {
@@ -1188,6 +1202,7 @@ const pieceModels = {
 };
 
 function updateBoardMeshes() {
+  resetPlanes();
   kingLoc = findKing(team);
   if (board[kingLoc[0]][kingLoc[1]].isCheck()) {
     inCheckLoc = [kingLoc[0], kingLoc[1]];
@@ -1196,6 +1211,8 @@ function updateBoardMeshes() {
     if (board[kingLoc[0]][kingLoc[1]].find_moves() == []) {
       gameOver(opp[team]);
     }
+  } else {
+    inCheck = false;
   }
 
   for (let r = 0; r < 8; r++) {
@@ -1251,8 +1268,8 @@ function highlightPlane(r,c,color="yellow") {
 function resetPlanes() {
   for (let i = 0; i < 8;i++) {
     for (let j = 0; j < 8; j++) {
-      if (inCheck && kingLoc[0] == i && kingLoc[1] == j) {
-        highlightPlane(kingLoc[0], kingLoc[1],"red")
+      if (board[i][j].isCheck() && board[i][j].piece == "k") {
+        highlightPlane(i,j,"red")
       }
       else if (planesArray[i][j].userData.defaultColor == "b") {
         planesArray[i][j].material.color.set(0x000000);
