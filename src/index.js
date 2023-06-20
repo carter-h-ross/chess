@@ -60,7 +60,7 @@ function isNumber(char) {
   return /^\d$/.test(char);
 }
 
-function decode_board(code) {
+function decodeBoard(code) {
   let result = Array(8).fill().map(() => Array(8).fill(null));
   let r = 0;
   let c = 0;
@@ -244,8 +244,6 @@ class Spot {
     }
 
     // checks if bishop makes check or queen in bishop directions
-    ir = [1,1,-1,-1];
-    ic = [1,-1,-1,1];
     for (let i = 1;i < 8;i++) {
       if (r+i == 8 || c+i == 8) {
         break;
@@ -621,6 +619,7 @@ class Spot {
   } // end of moves
 }
 
+const defaultBoard = "wbrbnbbbqbkbbbnbrbpbpbpbpbpbpbpbp32wpwpwpwpwpwpwpwpwrwnwbwqwkwbwnwr";
 var board = [
   // row 0
   [new Spot(0,0,"br"), new Spot(0,1,"bn"), new Spot(0,2,"bb"), new Spot(0,3,"bq"),
@@ -684,6 +683,33 @@ var nextBoard = [
   // row 7
   [new Spot(7,0,"wr"), new Spot(7,1,"wn"), new Spot(7,2,"wb"), new Spot(7,3,"wq"),
    new Spot(7,4,"wk"), new Spot(7,5,"wb"), new Spot(7,6,"wn"), new Spot(7,7,"wr"),],
+];
+
+var prevBoard = [
+  // row 0
+  [new Spot(0,0,"-="), new Spot(0,1,"-="), new Spot(0,2,"-="), new Spot(0,3,"-="),
+   new Spot(0,4,"-="), new Spot(0,5,"-="), new Spot(0,6,"-="), new Spot(0,7,"-="),],
+  // row 1
+  [new Spot(1,0,"-="), new Spot(1,1,"-="), new Spot(1,2,"-="), new Spot(1,3,"-="),
+   new Spot(1,4,"-="), new Spot(1,5,"-="), new Spot(1,6,"-="), new Spot(1,7,"-="),],
+  // row 2
+  [new Spot(2,0,"-="), new Spot(2,1,"-="), new Spot(2,2,"-="), new Spot(2,3,"-="),
+   new Spot(2,4,"-="), new Spot(2,5,"-="), new Spot(2,6,"-="), new Spot(2,7,"-="),],
+  // row 3
+  [new Spot(3,0,"-="), new Spot(3,1,"-="), new Spot(3,2,"-="), new Spot(3,3,"-="),
+   new Spot(3,4,"-="), new Spot(3,5,"-="), new Spot(3,6,"-="), new Spot(3,7,"-="),],
+  // row 4
+  [new Spot(4,0,"-="), new Spot(4,1,"-="), new Spot(4,2,"-="), new Spot(4,3,"-="),
+   new Spot(4,4,"-="), new Spot(4,5,"-="), new Spot(4,6,"-="), new Spot(4,7,"-="),],
+  // row 5
+  [new Spot(5,0,"-="), new Spot(5,1,"-="), new Spot(5,2,"-="), new Spot(5,3,"-="),
+   new Spot(5,4,"-="), new Spot(5,5,"-="), new Spot(5,6,"-="), new Spot(5,7,"-="),],
+  // row 6
+  [new Spot(6,0,"-="), new Spot(6,1,"-="), new Spot(6,2,"-="), new Spot(6,3,"-="),
+   new Spot(6,4,"-="), new Spot(6,5,"-="), new Spot(6,6,"-="), new Spot(6,7,"-="),],
+  // row 7
+  [new Spot(7,0,"-="), new Spot(7,1,"-="), new Spot(7,2,"-="), new Spot(7,3,"-="),
+   new Spot(7,4,"-="), new Spot(7,5,"-="), new Spot(7,6,"-="), new Spot(7,7,"-="),],
 ];
 
 const board_locs = {
@@ -801,12 +827,14 @@ var username = null;
 const mainMenuDiv = document.querySelector(".home-menu");
 const ingameMenuDiv = document.querySelector(".ingame-menu");
 const matchMenuDiv = document.querySelector(".match-menu");
+const localMatchMenuDiv = document.querySelector(".local-menu");
 
 // left side menus navigation
 function goToMainMenu() {
   mainMenuDiv.style.display = "flex";
   ingameMenuDiv.style.display = "none";
   matchMenuDiv.style.display = "none";
+  localMatchMenuDiv.style.display = "none";
 }
 
 function goToIngameMenu() {
@@ -819,13 +847,26 @@ function gotToMatchMenu() {
   ingameMenuDiv.style.display = "none";
 }
 
+function goToLocalMatchMenu() {
+  localMatchMenuDiv.style.display = "flex";
+  ingameMenuDiv.style.display = "none";
+}
+
 function leaveMatchMenu() {
   matchMenuDiv.style.display = "none";
   ingameMenuDiv.style.display = "flex";
+  prevBoard = board;
+  board = decodeBoard(defaultBoard);
+  updateBoardMeshes(board);
 }
 
-function hideAllMenus() {
-  mainMenuDiv.style.display = "none";
+function leaveLocalMatch() {
+  localMatchMenuDiv.style.display = "none";
+  mainMenuDiv.style.display = "flex";
+  prevBoard = board;
+  board = decodeBoard(defaultBoard);
+  updateBoardMeshes(board);
+  startSpin();
 }
 
 // sign up and login
@@ -904,7 +945,7 @@ loginForm.addEventListener('submit', (e) => {
 var mode = "online";
 const localMultiplayerButton = document.querySelector(".local-multiplayer-button");
 localMultiplayerButton.addEventListener("click", () => {
-  hideAllMenus();
+  goToLocalMatchMenu();
   team = "w";
   turn = "w";
   mode = "offline";
@@ -930,6 +971,12 @@ leaveMatchButton.addEventListener("click", (e) => {
   leaveMatch();
 });
 
+const leaveLocalMatchButton = document.querySelector(".leave-local");
+leaveLocalMatchButton.addEventListener("click", (e) => {
+  e.preventDefault();
+  leaveLocalMatch();
+});
+
 const resumeAsWhiteButton = document.querySelector(".resume-white");
 resumeAsWhiteButton.addEventListener("click", (e) => {
   e.preventDefault();
@@ -946,14 +993,14 @@ resumeAsBlackButton.addEventListener("click", (e) => {
 var rememberMe = true;
 document.querySelector('.control-checkbox').checked = false;
 var controlElement = document.querySelector('.control-checkbox');
-  var inputElement = controlElement.querySelector('.remember-me-check');
-  controlElement.addEventListener('click', function() {
+var inputElement = controlElement.querySelector('.remember-me-check');
+controlElement.addEventListener('click', function() {
     if (inputElement.checked) {
       rememberMe = true;
     } else {
       rememberMe = false;
     }
-  });
+});
 
 if (localStorage.getItem("savedEmail") != null && localStorage.getItem("savedPassword") != null && localStorage.getItem("savedUsername") != null) {
   document.querySelector(".email-input").value = localStorage.getItem("savedEmail");
@@ -985,13 +1032,6 @@ function updateGameBoardDatabase() {
 
 // listen for changes in the database of game board
 let isMatchRefInitialized = false;
-var prevBoard = null;
-var piecesToAdd = [
-  [0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],
-  [1,0],[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],
-  [6,0],[6,1],[6,2],[6,3],[6,4],[6,5],[6,6],[6,7],
-  [7,0],[7,1],[7,2],[7,3],[7,4],[7,5],[7,6],[7,7],
-];
 const setupMatchRefListener = () => {
   if (matchRef && !isMatchRefInitialized) {
     onValue(ref(dr, matchRef), (snapshot) =>  {
@@ -1001,15 +1041,7 @@ const setupMatchRefListener = () => {
         }
         const boardData = snapshot.val();
         if (boardData != null) {
-          piecesToAdd = [];
-          board = decode_board(boardData["board"]);
-          for (let r = 0;r < 8;r++) {
-            for (let c = 0;c < 8;c++) {
-              if (prevBoard[r][c].id != board[r][c].id && board[r][c].team != "-") {
-                piecesToAdd.push([r,c]);
-              }
-            }
-          }
+          board = decodeBoard(boardData["board"]);
           updateBoardMeshes();
         }
       } else {
@@ -1051,6 +1083,13 @@ function joinMatch(teamRequest="b") {
       setupMatchRefListener();
       initChat();
       gotToMatchMenu();
+      
+      prevBoard = copy2DArray(board);
+      get(ref(dr, matchRef)).then((snapshot) => {
+        board = decodeBoard(snapshot.val());
+      }).catch((error) => {
+        console.error(error);
+      });
       updateBoardMeshes();
     }
   })
@@ -1217,34 +1256,32 @@ function updateBoardMeshes() {
 
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
-      let needToPlace = true;
       for (let i = 0; i < meshes.length; i++) {
         if (meshes[i].r == r && meshes[i].c == c && board[r][c].id != meshes[i].piece) {
           meshes[i].removePiece();
           meshes.splice(i, 1);
         }
       }
+      if (prevBoard[r][c].id != board[r][c].id) {
+        const pieceKey = board[r][c].team + board[r][c].piece;
+        const modelPath = pieceModels[pieceKey];       
+          if(pieceKey == "-=") {
+          break;
+        }
+        gltfLoader.load(modelPath, function(gltf) {
+          const model = gltf.scene;
+          const scaleFactor = 0.5;
+          model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+          model.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
+          model.userData.index = { r, c };
+          const piece = new piece3d(r, c, model, pieceKey);
+          meshes.push(piece);
+          scene.add(model);
+        }, undefined, function(error) {
+          console.error(error);
+        });
+      }
     }
-  }
-
-  for (let i = 0; i < piecesToAdd.length; i++) {
-    let r = piecesToAdd[i][0];
-    let c = piecesToAdd[i][1];
-    const pieceKey = board[r][c].team + board[r][c].piece;
-    const modelPath = pieceModels[pieceKey];
-
-    gltfLoader.load(modelPath, function(gltf) {
-      const model = gltf.scene;
-      const scaleFactor = 0.5;
-      model.scale.set(scaleFactor, scaleFactor, scaleFactor);
-      model.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
-      model.userData.index = { r, c };
-      const piece = new piece3d(r, c, model, pieceKey);
-      meshes.push(piece);
-      scene.add(model);
-    }, undefined, function(error) {
-      console.error(error);
-    });
   }
 }
 
@@ -1331,15 +1368,9 @@ function onCanvasClick(event) {
               team = opp[team];
               goToTeamCamera(team);
               turn = team;
-              piecesToAdd = [];
-              for (let r = 0;r < 8;r++) {
-                for (let c = 0;c < 8;c++) {
-                  if (prevBoard[r][c].id != board[r][c].id && board[r][c].team != "-") {
-                    piecesToAdd.push([r,c]);
-                  }
-                }
-              }
               updateBoardMeshes();
+            } else {
+              turn = opp[turn];
             }
           }
         }
@@ -1352,6 +1383,7 @@ function onCanvasClick(event) {
   }
 }
 
+// creating planes that go on top of game board
 var planesArray = Array(8).fill().map(() => Array(8).fill(null));
 var altCounter = 1;
 var rayPlaneColor = 0xffffff;
@@ -1460,7 +1492,7 @@ gltfLoader.load("chess_board/scene.gltf", function(gltf) {
   console.error(error);
 });
 
-updateBoardMeshes(decode_board(encode_board()));
+updateBoardMeshes(decodeBoard(encode_board()));
 
 // main loop
 let spin = false;
