@@ -855,17 +855,16 @@ function goToLocalMatchMenu() {
 function leaveMatchMenu() {
   matchMenuDiv.style.display = "none";
   ingameMenuDiv.style.display = "flex";
-  prevBoard = board;
   board = decodeBoard(defaultBoard);
-  updateBoardMeshes(board);
+  updateBoardMeshes();
 }
 
 function leaveLocalMatch() {
   localMatchMenuDiv.style.display = "none";
   mainMenuDiv.style.display = "flex";
-  prevBoard = board;
+  prevBoard = copy2DArray(board);
   board = decodeBoard(defaultBoard);
-  updateBoardMeshes(board);
+  updateBoardMeshes();
   startSpin();
 }
 
@@ -968,6 +967,7 @@ createMatchButton.addEventListener("click", (e) => {
 const leaveMatchButton = document.querySelector(".leave-game");
 leaveMatchButton.addEventListener("click", (e) => {
   e.preventDefault();
+  prevBoard = copy2DArray(board);
   leaveMatch();
 });
 
@@ -1241,6 +1241,9 @@ const pieceModels = {
 };
 
 function updateBoardMeshes() {
+  console.log("BoardMeshes loading...");
+  console.log(prevBoard)
+  console.log(board)
   resetPlanes();
   kingLoc = findKing(team);
   if (board[kingLoc[0]][kingLoc[1]].isCheck()) {
@@ -1262,6 +1265,11 @@ function updateBoardMeshes() {
           meshes.splice(i, 1);
         }
       }
+    }
+  }
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
       if (prevBoard[r][c].id != board[r][c].id) {
         const pieceKey = board[r][c].team + board[r][c].piece;
         const modelPath = pieceModels[pieceKey];       
@@ -1505,7 +1513,7 @@ function startSpin() {
   spin = true;
   camera.position.x = 0;
   camera.position.z = 0;
-  camera.position.y = 2;
+  camera.position.y = 7;
 }
 startSpin();
 function animate() {
