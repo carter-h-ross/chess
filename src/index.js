@@ -315,6 +315,18 @@ class Spot {
     let piece = this.piece;
     let id = this.id;
 
+    // if admin
+    if (admin()) {
+      for (let r = 0;r < 8;r++) {
+        for (let c = 0;c < 8;c++) {
+          if (board[r][c].team != team) {
+            moves.push([r,c]);
+          }
+        }
+      }
+      return moves;
+    }
+
     // checks for moves king can make
     if (piece == "k") {
       ir = [0,1,1, 1, 0,-1,-1,-1];
@@ -868,12 +880,13 @@ function leaveLocalMatch() {
   startSpin();
 }
 
+var email;
 // sign up and login
 const signupForm = document.querySelector('.signup-login')
 signupForm.addEventListener('submit', (e) => {
   e.preventDefault()
 
-  const email = signupForm.email.value
+  email = signupForm.email.value
   const password = signupForm.password.value
   username = signupForm.username.value
 
@@ -910,6 +923,13 @@ logoutButton.addEventListener('click', () => {
       console.log(err.message)
     })
 })
+
+function admin () {
+  if (username == "admin" && email == "admin@carterross.dev") {
+    return true;
+  } 
+  return false;
+}
 
 const loginForm = document.querySelector('.signup-login')
 loginForm.addEventListener('submit', (e) => {
@@ -1241,9 +1261,6 @@ const pieceModels = {
 };
 
 function updateBoardMeshes() {
-  console.log("BoardMeshes loading...");
-  console.log(prevBoard)
-  console.log(board)
   resetPlanes();
   kingLoc = findKing(team);
   if (board[kingLoc[0]][kingLoc[1]].isCheck()) {
@@ -1348,7 +1365,7 @@ function onCanvasClick(event) {
       prevClickedMesh = targetObject;
       /* ------------------------------------------------------------ game logic ----------------------------------------------------------------------*/
       if (state == "unselected") {
-        if (board[r][c].team == team && turn == team) {
+        if ((board[r][c].team == team && turn == team) || admin()) {
           if (board[r][c].team != "-") {
             resetPlanes();
             availableMoves = board[r][c].find_moves();
@@ -1362,7 +1379,13 @@ function onCanvasClick(event) {
         for (let i = 0; i < availableMoves.length; i++) {
           if (availableMoves[i][0] == r && availableMoves[i][1] == c) {
             prevBoard = copy2DArray(board);
-            board[r][c] = new Spot(r, c, board[rSelected][cSelected].id);
+            if (board[rSelected][cSelected].id == "wp" && r == 0) {
+              board[r][c] = new Spot(r, c, "wq");
+            } else if (board[rSelected][cSelected].id == "bp" && r == 7) {
+              board[r][c] = new Spot(r, c, "bq");
+            } else {
+              board[r][c] = new Spot(r, c, board[rSelected][cSelected].id);
+            }
             board[rSelected][cSelected] = new Spot(rSelected, cSelected, "-=");
             scene.remove();
             log_board();
