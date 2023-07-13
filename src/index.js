@@ -1055,8 +1055,9 @@ let isMatchRefInitialized = false;
 const setupMatchRefListener = () => {
   if (matchRef && !isMatchRefInitialized) {
     onValue(ref(dr, matchRef), (snapshot) =>  {
+      console.log(prevBoard)
       if (isMatchRefInitialized) {
-        if (turn != team || mode == "offline") {
+        if (mode == "offline") {
           prevBoard = copy2DArray(board)
         }
         const boardData = snapshot.val();
@@ -1211,7 +1212,7 @@ function goToTeamCamera(team) {
       camera.position.x = -5;
       camera.lookAt(new THREE.Vector3(-5, 0, 0));
     } else {
-      camera.position.x = 0;
+      camera.position.x = -5;
       camera.lookAt(new THREE.Vector3(0, 0, 0));
     }
   } else {
@@ -1221,7 +1222,7 @@ function goToTeamCamera(team) {
       camera.position.x = 5;
       camera.lookAt(new THREE.Vector3(5, 0, 0));
     } else {
-      camera.position.x = 0;
+      camera.position.x = 5;
       camera.lookAt(new THREE.Vector3(0, 0, 0));
     }
   }
@@ -1261,6 +1262,11 @@ const pieceModels = {
 };
 
 function updateBoardMeshes() {
+  console.log("previous board:");
+  console.log(prevBoard);
+  console.log("board:");
+  console.log(board);
+
   resetPlanes();
   kingLoc = findKing(team);
   if (board[kingLoc[0]][kingLoc[1]].isCheck()) {
@@ -1365,7 +1371,7 @@ function onCanvasClick(event) {
       prevClickedMesh = targetObject;
       /* ------------------------------------------------------------ game logic ----------------------------------------------------------------------*/
       if (state == "unselected") {
-        if ((board[r][c].team == team && turn == team) || admin()) {
+        if ((board[r][c].team == team && turn == team)) {
           if (board[r][c].team != "-") {
             resetPlanes();
             availableMoves = board[r][c].find_moves();
@@ -1400,8 +1406,6 @@ function onCanvasClick(event) {
               goToTeamCamera(team);
               turn = team;
               updateBoardMeshes();
-            } else {
-              turn = opp[turn];
             }
           }
         }
