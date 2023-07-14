@@ -50,6 +50,9 @@ function encode_board(op="") {
       } else {
         counter++;
         empty = true;
+        if (r == 7 && c == 7) {
+          result += `${counter}`;
+        }
       }
     }
   }
