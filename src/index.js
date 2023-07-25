@@ -143,7 +143,7 @@ class Spot {
     
     let ir = [];
     let ic = [];
-    let b = null;
+    let b;
     if (op == "next") {
       b = nextBoard;
     } else {
@@ -306,7 +306,7 @@ class Spot {
     return false;
   } // end of isCheck
 
-  find_moves () {
+  findMoves () {      
 
     let ir = [];
     let ic = [];
@@ -335,8 +335,9 @@ class Spot {
       ir = [0,1,1, 1, 0,-1,-1,-1];
       ic = [1,1,0,-1,-1,-1, 0, 1];
       for (let i = 0;i < 8;i++) {
-        if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 && board[r+ir[i]][c+ic[i]].team == "-") {
-          if (!(board[r+ir[i]][c+ic[i]].isCheck())) {
+        if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 && board[r+ir[i]][c+ic[i]].team != team) {
+          nextBoard = getNextBoard(r,c,r+ir[i],c+ic[i]);
+          if (!(nextBoard[r+ir[i]][c+ic[i]].isCheck("next"))) {
             moves.push([r+ir[i],c+ic[i]]);
           }
         }
@@ -754,7 +755,8 @@ var encodedBoard = null;
 var inCheck = false;
 var inCheckLoc = null;
 var checkMate = false;
-var kingLoc = [0,0]
+var kingLoc;
+var oppKingLoc;
 
 encode_board();
 
@@ -1057,15 +1059,15 @@ function updateGameBoardDatabase() {
 let isMatchRefInitialized = false;
 const setupMatchRefListener = () => {
   if (matchRef && !isMatchRefInitialized) {
-    onValue(ref(dr, matchRef), (snapshot) =>  {
-      console.log(prevBoard)
+    onValue(ref(dr, `${matchRef}/board`), (snapshot) =>  {
+      console.log("change in game board database reference")
       if (isMatchRefInitialized) {
         if (mode == "offline") {
           prevBoard = copy2DArray(board)
         }
         const boardData = snapshot.val();
         if (boardData != null) {
-          board = decodeBoard(boardData["board"]);
+          board = decodeBoard(boardData);
           updateBoardMeshes();
         }
       } else {
@@ -1091,7 +1093,7 @@ function createMatch() {
   matchRef = getMatchRef();
   setupMatchRefListener();
   initChat();
-  updateGameBoardDatabase("newMatch");
+  updateGameBoardDatabase();
   gotToMatchMenu();
 }
 
@@ -1137,7 +1139,13 @@ const unsubAuth = onAuthStateChanged(auth, (user) => {
 goToMainMenu();
 
 function gameOver(winner) {
+  prevBoard = copy2DArray(board);
+  board = decodeBoard(defaultBoard);
+  turn = "w";
+  updateBoardMeshes();
+  updateGameBoardDatabase();
   console.log('game over - winner: ', winner);
+  sendChatMessage(`${winner} won, game restarted.`, "result", getMatchRef());
 }
 
 // ingame messaging
@@ -1216,7 +1224,7 @@ function goToTeamCamera(team) {
       camera.lookAt(new THREE.Vector3(-5, 0, 0));
     } else {
       camera.position.x = -5;
-      camera.lookAt(new THREE.Vector3(0, 0, 0));
+      camera.lookAt(new THREE.Vector3(-5, 0, 0));
     }
   } else {
     camera.position.z = -30;
@@ -1226,7 +1234,7 @@ function goToTeamCamera(team) {
       camera.lookAt(new THREE.Vector3(5, 0, 0));
     } else {
       camera.position.x = 5;
-      camera.lookAt(new THREE.Vector3(0, 0, 0));
+      camera.lookAt(new THREE.Vector3(5, 0, 0));
     }
   }
 }
@@ -1264,19 +1272,23 @@ const pieceModels = {
   'bn': 'pieces/black-knight.gltf',
 };
 
-function updateBoardMeshes() {
-  console.log("previous board:");
-  console.log(prevBoard);
-  console.log("board:");
-  console.log(board);
+function updateBoardMeshes(op="") {
 
+  console.log("-----------------------------")
+  console.log(prevBoard)
+  console.log(board)
+  console.log('update');
   resetPlanes();
+  if (op == "gameOver") {
+    prevBoard = copy2DArray(board);
+  }
   kingLoc = findKing(team);
+  oppKingLoc = findKing(opp[team]);
   if (board[kingLoc[0]][kingLoc[1]].isCheck()) {
     inCheckLoc = [kingLoc[0], kingLoc[1]];
     inCheck = true;
     highlightPlane(kingLoc[0], kingLoc[1], "red");
-    if (board[kingLoc[0]][kingLoc[1]].find_moves() == []) {
+    if (board[kingLoc[0]][kingLoc[1]].findMoves().length === 0) {
       gameOver(opp[team]);
     }
   } else {
@@ -1377,7 +1389,7 @@ function onCanvasClick(event) {
         if ((board[r][c].team == team && turn == team)) {
           if (board[r][c].team != "-") {
             resetPlanes();
-            availableMoves = board[r][c].find_moves();
+            availableMoves = board[r][c].findMoves();
             highlightMoves(availableMoves);
             rSelected = r;
             cSelected = c;
