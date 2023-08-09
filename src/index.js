@@ -24,7 +24,7 @@ function log_board(){
   }
 }
 
-function encode_board(op="") {
+function encodeBoard(op="") {
   let result = "";
   if (op == "w") {
     result = "w";
@@ -33,25 +33,52 @@ function encode_board(op="") {
   }
   let counter = 0;
   let empty = false;
-  outerloop:
-  for (let r = 0; r < 8; r++) {
-    inerloop:
-    for (let c = 0; c < 8; c++) {
-      if (r > 7 && c > 7) {
-        break outerloop;
-      }
-      if (board[r][c].team != "-") {
-        if (empty) {
-          result += `${counter}`;
-          counter = 0;
-          empty = false;
+
+  if (gm == "double") {
+    outerloop:
+    for (let r = 0; r < 16; r++) {
+      inerloop:
+      for (let c = 0; c < 16; c++) {
+        if (r > 16 && c > 16) {
+          break outerloop;
         }
-        result += board[r][c].id;
-      } else {
-        counter++;
-        empty = true;
-        if (r == 7 && c == 7) {
-          result += `${counter}`;
+        if (board[r][c].team != "-") {
+          if (empty) {
+            result += `${counter}`;
+            counter = 0;
+            empty = false;
+          }
+          result += board[r][c].id;
+        } else {
+          counter++;
+          empty = true;
+          if (r == 16 && c == 16) {
+            result += `${counter}`;
+          }
+        }
+      }
+    }
+  } else {
+    outerloop:
+    for (let r = 0; r < 8; r++) {
+      inerloop:
+      for (let c = 0; c < 8; c++) {
+        if (r > 7 && c > 7) {
+          break outerloop;
+        }
+        if (board[r][c].team != "-") {
+          if (empty) {
+            result += `${counter}`;
+            counter = 0;
+            empty = false;
+          }
+          result += board[r][c].id;
+        } else {
+          counter++;
+          empty = true;
+          if (r == 7 && c == 7) {
+            result += `${counter}`;
+          }
         }
       }
     }
@@ -64,39 +91,85 @@ function isNumber(char) {
 }
 
 function decodeBoard(code) {
-  let result = Array(8).fill().map(() => Array(8).fill(null));
-  let r = 0;
-  let c = 0;
-  turn = code[0];
-  let i = 1;
-  while (i < code.length) {
-    let ch = code[i];
-    if (isNumber(ch)) {
-      if (isNumber(code[i+1])) {
-        ch += code[i+1];
+
+  if (gm == "double") {
+    let result = Array(16).fill().map(() => Array(16).fill(null));
+    let r = 0;
+    let c = 0;
+    console.log(code[0])
+    console.log(code)
+    turn = code[0];
+    let i = 1;
+    while (i < code.length) {
+      let ch = code[i];
+      if (isNumber(ch)) {
+        if (isNumber(code[i+1])) {
+          ch += code[i+1];
+          i++;
+          if (isNumber(code[i+1])) {
+            ch += code[i+1];
+            i++;
+          }
+        }
+        let count = parseInt(ch);
+        for (let j = 0; j < count; j++) {
+          result[r][c] = new Spot(r,c,"-=")
+          c++;
+          if (c == 16) {
+            c = 0;
+            r++;
+          }
+        }
         i++;
+      } else {
+        let id = ch + code.charAt(i + 1);
+        result[r][c] = new Spot(r,c,id);
+        c++;
+        if (c == 16) {
+          c = 0;
+          r++;
+        }
+        i += 2;
       }
-      let count = parseInt(ch);
-      for (let j = 0; j < count; j++) {
-        result[r][c] = new Spot(r,c,"-=")
+    }
+  } else {
+    let result = Array(8).fill().map(() => Array(8).fill(null));
+    let r = 0;
+    let c = 0;
+    console.log(code[0])
+    console.log(code)
+    turn = code[0];
+    let i = 1;
+    while (i < code.length) {
+      let ch = code[i];
+      if (isNumber(ch)) {
+        if (isNumber(code[i+1])) {
+          ch += code[i+1];
+          i++;
+        }
+        let count = parseInt(ch);
+        for (let j = 0; j < count; j++) {
+          result[r][c] = new Spot(r,c,"-=")
+          c++;
+          if (c == 8) {
+            c = 0;
+            r++;
+          }
+        }
+        i++;
+      } else {
+        let id = ch + code.charAt(i + 1);
+        result[r][c] = new Spot(r,c,id);
         c++;
         if (c == 8) {
           c = 0;
           r++;
         }
+        i += 2;
       }
-      i++;
-    } else {
-      let id = ch + code.charAt(i + 1);
-      result[r][c] = new Spot(r,c,id);
-      c++;
-      if (c == 8) {
-        c = 0;
-        r++;
-      }
-      i += 2;
     }
   }
+
   return result;
 }
 
@@ -118,13 +191,25 @@ function debug_board(moves) {
 }
 
 function findKing(team) {
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      if (board[r][c].id == `${team}k`) {
-        return [r,c];
+
+  if (gm == "double") {
+    for (let r = 0; r < 16; r++) {
+      for (let c = 0; c < 16; c++) {
+        if (board[r][c].id == `${team}k`) {
+          return [r,c];
+        }
+      }
+    }
+  } else {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        if (board[r][c].id == `${team}k`) {
+          return [r,c];
+        }
       }
     }
   }
+
   return null;
 }
 
@@ -311,6 +396,7 @@ class Spot {
     let ir = [];
     let ic = [];
     let b = board;
+    let m = gm
     let team = this.team;
     let r = this.r;
     let c = this.c;
@@ -487,7 +573,7 @@ class Spot {
     if (piece == "r" || piece == "q") {
       if (r < 7) {
         for (let i = r+1;i < 8;i++) {
-          if (b[i][c].team == team) {
+          if (b[i][c].team == team || (m == "lava bridge" && (c < 3 || c > 4) && (i == 3 || i == 4))) {
             break;
           } else {
             nextBoard = getNextBoard(r,c,i,c);
@@ -517,7 +603,7 @@ class Spot {
       }
       if (r > 0) {
         for (let i = r-1;i > -1;i--) {
-          if (b[i][c].team == team) {
+          if (b[i][c].team == team || (m == "lava bridge" && (c < 3 || c > 4) && (i == 3 || i == 4))) {
             break;
           } else {
             nextBoard = getNextBoard(r,c,i,c);
@@ -554,7 +640,9 @@ class Spot {
           break;
         }
         nextBoard = getNextBoard(r,c,r+i,c+i);
-        if (b[r+i][c+i].team == "-") {
+        if (m = "lava bridge" && (r+i == 3 || r+i == 4) && (c+i < 3 || c+i  > 4)) {
+          break;
+        } else if (b[r+i][c+i].team == "-") {
           if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
             moves.push([r+i, c+i]);
           }
@@ -574,7 +662,9 @@ class Spot {
           break;
         }
         nextBoard = getNextBoard(r,c,r+i,c-i);
-        if (b[r+i][c-i].team == "-") {
+        if (m = "lava bridge" && (r+i == 3 || r+i == 4) && (c-i < 3 || c-i > 4)) {
+          break;
+        } else if (b[r+i][c-i].team == "-") {
           if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
             moves.push([r+i, c-i]);
           }
@@ -594,7 +684,9 @@ class Spot {
           break;
         }
         nextBoard = getNextBoard(r,c,r-i,c-i);
-        if (b[r-i][c-i].team == "-") {
+        if (m = "lava bridge" && (r-i == 3 || r-i == 4) && (c-i < 3 || c-i > 4)) {
+          break;
+        } else if (b[r-i][c-i].team == "-") {
           if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
             moves.push([r-i, c-i]);
           }
@@ -614,7 +706,9 @@ class Spot {
           break;
         }
         nextBoard = getNextBoard(r,c,r-i,c+i);
-        if (b[r-i][c+i].team == "-") {
+        if (m = "lava bridge" && (r-i == 3 || r-i == 4) && (c+i < 3 || c+i > 4)) {
+          break;
+        } else if (b[r-i][c+i].team == "-") {
           if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) { 
             moves.push([r-i, c+i]);
           }
@@ -636,6 +730,8 @@ class Spot {
 }
 
 const defaultBoard = "wbrbnbbbqbkbbbnbrbpbpbpbpbpbpbpbp32wpwpwpwpwpwpwpwpwrwnwbwqwkwbwnwr";
+const queenAttackBoard = "wbqbqbqbqbkbqbqbqbpbpbpbpbpbpbpbp32wpwpwpwpwpwpwpwpwqwqwqwqwkwqwqwq";
+
 var board = [
   // row 0
   [new Spot(0,0,"br"), new Spot(0,1,"bn"), new Spot(0,2,"bb"), new Spot(0,3,"bq"),
@@ -758,7 +854,9 @@ var checkMate = false;
 var kingLoc;
 var oppKingLoc;
 
-encode_board();
+encodeBoard();
+
+var gm = "standard";
 
 /*--------------------------------------- firebase ----------------------------------------*/
 
@@ -859,7 +957,7 @@ function goToIngameMenu() {
   ingameMenuDiv.style.display = "flex";
 }
 
-function gotToMatchMenu() {
+function goToMatchMenu() {
   matchMenuDiv.style.display = "flex";
   ingameMenuDiv.style.display = "none";
 }
@@ -976,6 +1074,8 @@ localMultiplayerButton.addEventListener("click", () => {
   goToTeamCamera(team);
 })
 
+// ---------------------------------------------------------------- joining game ----------------------------------------------------
+
 // buttons after logging in
 const joinMatchButton = document.querySelector(".join-game");
 joinMatchButton.addEventListener("click", (e) => {
@@ -1046,7 +1146,7 @@ var matchRef = `games/${username}-${opponentName}`;
 function updateGameBoardDatabase() {
   const matchRef = getMatchRef();
   const boardRef = ref(dr, `${matchRef}/board`);
-  set(boardRef, encode_board())
+  set(boardRef, encodeBoard())
     .then(() => {
       
     })
@@ -1093,8 +1193,15 @@ function createMatch() {
   matchRef = getMatchRef();
   setupMatchRefListener();
   initChat();
+  var selectElement = document.getElementById('gameModeSelect');
+  gm = selectElement.options[selectElement.selectedIndex].value;
+  console.log(gm);
+  if (gm == "queen attack") {
+    console.log(queenAttackBoard)
+    board = decodeBoard(queenAttackBoard);
+  }
   updateGameBoardDatabase();
-  gotToMatchMenu();
+  goToMatchMenu();
 }
 
 function joinMatch(teamRequest="b") {
@@ -1108,7 +1215,7 @@ function joinMatch(teamRequest="b") {
     } else {
       setupMatchRefListener();
       initChat();
-      gotToMatchMenu();
+      goToMatchMenu();
       
       prevBoard = copy2DArray(board);
       get(ref(dr, matchRef)).then((snapshot) => {
@@ -1144,7 +1251,6 @@ function gameOver(winner) {
   turn = "w";
   updateBoardMeshes();
   updateGameBoardDatabase();
-  console.log('game over - winner: ', winner);
   sendChatMessage(`${winner} won, game restarted.`, "result", getMatchRef());
 }
 
@@ -1274,10 +1380,6 @@ const pieceModels = {
 
 function updateBoardMeshes(op="") {
 
-  console.log("-----------------------------")
-  console.log(prevBoard)
-  console.log(board)
-  console.log('update');
   resetPlanes();
   if (op == "gameOver") {
     prevBoard = copy2DArray(board);
@@ -1410,7 +1512,7 @@ function onCanvasClick(event) {
             board[rSelected][cSelected] = new Spot(rSelected, cSelected, "-=");
             scene.remove();
             log_board();
-            encodedBoard = encode_board();
+            encodedBoard = encodeBoard();
             if (mode == "online") {
               updateGameBoardDatabase();
             }
@@ -1511,6 +1613,9 @@ scene.background = background_texture;
 
 // Listen to keydown event
 window.addEventListener('keydown', function(event) {
+  if (event.key === 'q') {
+    console.log(encodeBoard());
+  }
   if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
     return;
   }
@@ -1534,7 +1639,7 @@ window.addEventListener('keydown', function(event) {
 
 
 // chess board
-gltfLoader.load("chess_board/scene.gltf", function(gltf) {
+gltfLoader.load("chess_board/lava-chess.gltf", function(gltf) {
   const model = gltf.scene;
   scene.add(model);
   model.position.set(0,0,0)
@@ -1542,7 +1647,7 @@ gltfLoader.load("chess_board/scene.gltf", function(gltf) {
   console.error(error);
 });
 
-updateBoardMeshes(decodeBoard(encode_board()));
+updateBoardMeshes(decodeBoard(encodeBoard()));
 
 // main loop
 let spin = false;
