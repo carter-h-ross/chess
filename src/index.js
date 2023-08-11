@@ -34,7 +34,9 @@ function encodeBoard(op="") {
   let counter = 0;
   let empty = false;
 
-  if (gm == "double") {
+  if (gm == "double" || op == "double") {
+    console.log("board2:")
+    console.log(board2);
     outerloop:
     for (let r = 0; r < 16; r++) {
       inerloop:
@@ -42,13 +44,13 @@ function encodeBoard(op="") {
         if (r > 16 && c > 16) {
           break outerloop;
         }
-        if (board[r][c].team != "-") {
+        if (board2[r][c].team != "-") {
           if (empty) {
             result += `${counter}`;
             counter = 0;
             empty = false;
           }
-          result += board[r][c].id;
+          result += board2[r][c].id;
         } else {
           counter++;
           empty = true;
@@ -92,8 +94,9 @@ function isNumber(char) {
 
 function decodeBoard(code) {
 
+  let result;
   if (gm == "double") {
-    let result = Array(16).fill().map(() => Array(16).fill(null));
+    result = Array(16).fill().map(() => Array(16).fill(null));
     let r = 0;
     let c = 0;
     console.log(code[0])
@@ -133,7 +136,7 @@ function decodeBoard(code) {
       }
     }
   } else {
-    let result = Array(8).fill().map(() => Array(8).fill(null));
+    result = Array(8).fill().map(() => Array(8).fill(null));
     let r = 0;
     let c = 0;
     console.log(code[0])
@@ -195,7 +198,7 @@ function findKing(team) {
   if (gm == "double") {
     for (let r = 0; r < 16; r++) {
       for (let c = 0; c < 16; c++) {
-        if (board[r][c].id == `${team}k`) {
+        if (board2[r][c].id == `${team}k`) {
           return [r,c];
         }
       }
@@ -229,161 +232,323 @@ class Spot {
     let ir = [];
     let ic = [];
     let b;
-    if (op == "next") {
-      b = nextBoard;
+    if (gm == "double") {
+      if (op == "next") {
+        b = nextBoard2;
+      } else {
+        b = board2;
+      }
     } else {
-      b = board;
+      if (op == "next") {
+        b = nextBoard;
+      } else {
+        b = board;
+      }
     }
     let team = this.team;
     let r = this.r;
     let c = this.c;
 
-    // checks if black pawn will make check
-    if (team == "w") {
-      if (r > 0 && c < 7) {
-        if (b[r-1][c+1].id == "bp") /* up 1 right 1 */ {
-          return true;
-        }
-      }
-      if (r > 0 && c > 0) {
-        if (b[r-1][c-1].id == "bp") /* up 1 left 1 */ {
-          return true;
-        }
-      }
-    }
-
-    // checks if white pawn will make check
-    if (team == "b") {
-      if (r < 7 && c < 7) {
-        if (b[r+1][c+1].id == "wp") /* down 1 right 1 */ {
-          return true;
-        }
-      }
-      if (r < 7 && c > 0) {
-        if (b[r+1][c-1].id == "wp") /* down 1 left 1 */ {
-          return true;
-        }
-      }
-    }
-
-    // checks if knight will make check
-    ir = [1,2,2,1,-1,-2,-2,-1]; 
-    ic = [2,1,-1,-2,-2,-1,1,2]; // locations to check for pieces relative to the piece
-    for (let i = 0; i < 8;i++) {
-      if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8) {
-        if (b[r+ir[i]][c+ic[i]].id == `${opp[team]}n`) {
-          return true;
-        }
-      }
-    }
-
-    // checks if rook will make check or queen in rook directions
-    if (r < 7) {
-      for (let i = r+1;i < 8;i++) {
-        if (b[i][c].team == team) {
-          break;
-        } else if (b[i][c].team == opp[team]) {
-          if (b[i][c].id == `${opp[team]}r` || b[i][c].id == `${opp[team]}q`) /* right */ {
+    if (gm == "standard" || gm == "queen attack" || gm == "lava chess") {
+      // checks if black pawn will make check
+      if (team == "w") {
+        if (r > 0 && c < 7) {
+          if (b[r-1][c+1].id == "bp") /* up 1 right 1 */ {
             return true;
-          } else {
-            break;
+          }
+        }
+        if (r > 0 && c > 0) {
+          if (b[r-1][c-1].id == "bp") /* up 1 left 1 */ {
+            return true;
           }
         }
       }
-    }
-    if (c < 7) {
-      for (let i = c+1;i < 8;i++) {
-        if (b[r][i].team == team) {
-          break;
-        } else if (b[r][i].team == opp[team]) {
-          if (b[r][i].id == `${opp[team]}r` || b[r][i].id == `${opp[team]}q`) /* down */ {
-            return true;
-          } else {
-            break;
-          }
-        }
-      }
-    }
-    if (r > 0) {
-      for (let i = r-1;i > -1;i--) {
-        if (b[i][c].team == team) {
-          break;
-        } else if (b[i][c].team == opp[team]) {
-          if (b[i][c].id == `${opp[team]}r` || b[i][c].id == `${opp[team]}q`) /* left */ {
-            return true;
-          } else {
-            break;
-          }
-        }
-      }
-    }
-    if (c > 0) {
-      for (let i = c-1;i > -1;i--) {
-        if (b[r][i].team == team) {
-          break;
-        } else if (b[r][i].team == opp[team]) {
-          if (b[r][i].id == `${opp[team]}r` || b[r][i].id == `${opp[team]}q`) /* up */ {
-            return true;
-          } else {
-            break;
-          }
-        }
-      }
-    }
 
-    // checks if bishop makes check or queen in bishop directions
-    for (let i = 1;i < 8;i++) {
-      if (r+i == 8 || c+i == 8) {
-        break;
+      // checks if white pawn will make check
+      if (team == "b") {
+        if (r < 7 && c < 7) {
+          if (b[r+1][c+1].id == "wp") /* down 1 right 1 */ {
+            return true;
+          }
+        }
+        if (r < 7 && c > 0) {
+          if (b[r+1][c-1].id == "wp") /* down 1 left 1 */ {
+            return true;
+          }
+        }
       }
-      if (b[r+i][c+i].team == team) {
-        break;
-      }
-      if (b[r+i][c+i].id == `${opp[team]}b` || b[r+i][c+i].id == `${opp[team]}q`) /* down right */ {
-        return true;
-      }
-    }
-    for (let i = 1;i < 8;i++) {
-      if (r+i == 8 || c-i == -1) {
-        break;
-      }
-      if (b[r+i][c-i].team == team) {
-        break;
-      }
-      if (b[r+i][c-i].id == `${opp[team]}b` || b[r+i][c-i].id == `${opp[team]}q`) /* down left */ {
-        return true;
-      } 
-    }
-    for (let i = 1;i < 8;i++) {
-      if (r-i == -1 || c-i == -1) {
-        break;
-      }
-      if (b[r-i][c-i].team == team) {
-        break;
-      }
-      if (b[r-i][c-i].id == `${opp[team]}b` || b[r-i][c-i].id == `${opp[team]}q`) /* up left */ {
-        return true;
-      }
-    }
-    for (let i = 1;i < 8;i++) {
-      if (r-i == -1 || c+i == 8) {
-        break;
-      }
-      if (b[r-i][c+i].team == team) {
-        break;
-      }
-      if (b[r-i][c+i].id == `${opp[team]}b` || b[r-i][c+i].id == `${opp[team]}q`) /* up right */ {
-        return true;
-      }
-    }
 
-    // checks if king will make check
-    ir = [0,1,1,1,0,-1,-1,-1];
-    ic = [1,1,0,-1,-1,-1,0,1];
-    for (let i = 0;i < 8;i++) {
-      if (r+ir[i] > 0 && r+ir[i] < 8 && c+ic[i] > 0 && c+ic[i] < 8) {
-        if (b[r+ir[i]][c+ic[i]].id == `${opp[team]}k`) {
+      // checks if knight will make check
+      ir = [1,2,2,1,-1,-2,-2,-1]; 
+      ic = [2,1,-1,-2,-2,-1,1,2]; // locations to check for pieces relative to the piece
+      for (let i = 0; i < 8;i++) {
+        if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8) {
+          if (b[r+ir[i]][c+ic[i]].id == `${opp[team]}n`) {
+            return true;
+          }
+        }
+      }
+
+      // checks if rook will make check or queen in rook directions
+      if (r < 7) {
+        for (let i = r+1;i < 8;i++) {
+          if (b[i][c].team == team) {
+            break;
+          } else if (b[i][c].team == opp[team]) {
+            if (b[i][c].id == `${opp[team]}r` || b[i][c].id == `${opp[team]}q`) /* right */ {
+              return true;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+      if (c < 7) {
+        for (let i = c+1;i < 8;i++) {
+          if (b[r][i].team == team) {
+            break;
+          } else if (b[r][i].team == opp[team]) {
+            if (b[r][i].id == `${opp[team]}r` || b[r][i].id == `${opp[team]}q`) /* down */ {
+              return true;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+      if (r > 0) {
+        for (let i = r-1;i > -1;i--) {
+          if (b[i][c].team == team) {
+            break;
+          } else if (b[i][c].team == opp[team]) {
+            if (b[i][c].id == `${opp[team]}r` || b[i][c].id == `${opp[team]}q`) /* left */ {
+              return true;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+      if (c > 0) {
+        for (let i = c-1;i > -1;i--) {
+          if (b[r][i].team == team) {
+            break;
+          } else if (b[r][i].team == opp[team]) {
+            if (b[r][i].id == `${opp[team]}r` || b[r][i].id == `${opp[team]}q`) /* up */ {
+              return true;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+
+      // checks if bishop makes check or queen in bishop directions
+      for (let i = 1;i < 8;i++) {
+        if (r+i == 8 || c+i == 8) {
+          break;
+        }
+        if (b[r+i][c+i].team == team) {
+          break;
+        }
+        if (b[r+i][c+i].id == `${opp[team]}b` || b[r+i][c+i].id == `${opp[team]}q`) /* down right */ {
           return true;
+        }
+      }
+      for (let i = 1;i < 8;i++) {
+        if (r+i == 8 || c-i == -1) {
+          break;
+        }
+        if (b[r+i][c-i].team == team) {
+          break;
+        }
+        if (b[r+i][c-i].id == `${opp[team]}b` || b[r+i][c-i].id == `${opp[team]}q`) /* down left */ {
+          return true;
+        } 
+      }
+      for (let i = 1;i < 8;i++) {
+        if (r-i == -1 || c-i == -1) {
+          break;
+        }
+        if (b[r-i][c-i].team == team) {
+          break;
+        }
+        if (b[r-i][c-i].id == `${opp[team]}b` || b[r-i][c-i].id == `${opp[team]}q`) /* up left */ {
+          return true;
+        }
+      }
+      for (let i = 1;i < 8;i++) {
+        if (r-i == -1 || c+i == 8) {
+          break;
+        }
+        if (b[r-i][c+i].team == team) {
+          break;
+        }
+        if (b[r-i][c+i].id == `${opp[team]}b` || b[r-i][c+i].id == `${opp[team]}q`) /* up right */ {
+          return true;
+        }
+      }
+
+      // checks if king will make check
+      ir = [0,1,1,1,0,-1,-1,-1];
+      ic = [1,1,0,-1,-1,-1,0,1];
+      for (let i = 0;i < 8;i++) {
+        if (r+ir[i] > 0 && r+ir[i] < 8 && c+ic[i] > 0 && c+ic[i] < 8) {
+          if (b[r+ir[i]][c+ic[i]].id == `${opp[team]}k`) {
+            return true;
+          }
+        }
+      }
+
+    //---------------------------------------------------------------  double check for check ----------------------------------------------------------
+    } else if (gm == "double") {
+      // checks if black pawn will make check
+      if (team == "w") {
+        if (r > 0 && c < 15) {
+          if (b[r-1][c+1].id == "bp") /* up 1 right 1 */ {
+            return true;
+          }
+        }
+        if (r > 0 && c > 0) {
+          if (b[r-1][c-1].id == "bp") /* up 1 left 1 */ {
+            return true;
+          }
+        }
+      }
+
+      // checks if white pawn will make check
+      if (team == "b") {
+        if (r < 15 && c < 15) {
+          if (b[r+1][c+1].id == "wp") /* down 1 right 1 */ {
+            return true;
+          }
+        }
+        if (r < 15 && c > 0) {
+          if (b[r+1][c-1].id == "wp") /* down 1 left 1 */ {
+            return true;
+          }
+        }
+      }
+
+      // checks if knight will make check
+      ir = [1,2,2,1,-1,-2,-2,-1]; 
+      ic = [2,1,-1,-2,-2,-1,1,2]; // locations to check for pieces relative to the piece
+      for (let i = 0; i < 16;i++) {
+        if (r+ir[i] > -1 && r+ir[i] < 16 && c+ic[i] > -1 && c+ic[i] < 16) {
+          if (b[r+ir[i]][c+ic[i]].id == `${opp[team]}n`) {
+            return true;
+          }
+        }
+      }
+
+      // checks if rook will make check or queen in rook directions
+      if (r < 15) {
+        for (let i = r+1;i < 16;i++) {
+          if (b[i][c].team == team) {
+            break;
+          } else if (b[i][c].team == opp[team]) {
+            if (b[i][c].id == `${opp[team]}r` || b[i][c].id == `${opp[team]}q`) /* right */ {
+              return true;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+      if (c < 15) {
+        for (let i = c+1;i < 16;i++) {
+          if (b[r][i].team == team) {
+            break;
+          } else if (b[r][i].team == opp[team]) {
+            if (b[r][i].id == `${opp[team]}r` || b[r][i].id == `${opp[team]}q`) /* down */ {
+              return true;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+      if (r > 0) {
+        for (let i = r-1;i > -1;i--) {
+          if (b[i][c].team == team) {
+            break;
+          } else if (b[i][c].team == opp[team]) {
+            if (b[i][c].id == `${opp[team]}r` || b[i][c].id == `${opp[team]}q`) /* left */ {
+              return true;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+      if (c > 0) {
+        for (let i = c-1;i > -1;i--) {
+          if (b[r][i].team == team) {
+            break;
+          } else if (b[r][i].team == opp[team]) {
+            if (b[r][i].id == `${opp[team]}r` || b[r][i].id == `${opp[team]}q`) /* up */ {
+              return true;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+
+      // checks if bishop makes check or queen in bishop directions
+      for (let i = 1;i < 16;i++) {
+        if (r+i == 16 || c+i == 16) {
+          break;
+        }
+        if (b[r+i][c+i].team == team) {
+          break;
+        }
+        if (b[r+i][c+i].id == `${opp[team]}b` || b[r+i][c+i].id == `${opp[team]}q`) /* down right */ {
+          return true;
+        }
+      }
+      for (let i = 1;i < 16;i++) {
+        if (r+i == 16 || c-i == -1) {
+          break;
+        }
+        if (b[r+i][c-i].team == team) {
+          break;
+        }
+        if (b[r+i][c-i].id == `${opp[team]}b` || b[r+i][c-i].id == `${opp[team]}q`) /* down left */ {
+          return true;
+        } 
+      }
+      for (let i = 1;i < 16;i++) {
+        if (r-i == -1 || c-i == -1) {
+          break;
+        }
+        if (b[r-i][c-i].team == team) {
+          break;
+        }
+        if (b[r-i][c-i].id == `${opp[team]}b` || b[r-i][c-i].id == `${opp[team]}q`) /* up left */ {
+          return true;
+        }
+      }
+      for (let i = 1;i < 16;i++) {
+        if (r-i == -1 || c+i == 16) {
+          break;
+        }
+        if (b[r-i][c+i].team == team) {
+          break;
+        }
+        if (b[r-i][c+i].id == `${opp[team]}b` || b[r-i][c+i].id == `${opp[team]}q`) /* up right */ {
+          return true;
+        }
+      }
+
+      // checks if king will make check
+      ir = [0,1,1,1,0,-1,-1,-1];
+      ic = [1,1,0,-1,-1,-1,0,1];
+      for (let i = 0;i < 16;i++) {
+        if (r+ir[i] > 0 && r+ir[i] < 16 && c+ic[i] > 0 && c+ic[i] < 16) {
+          if (b[r+ir[i]][c+ic[i]].id == `${opp[team]}k`) {
+            return true;
+          }
         }
       }
     }
@@ -395,7 +560,12 @@ class Spot {
 
     let ir = [];
     let ic = [];
-    let b = board;
+    let b;
+    if (gm == "double") {
+      b = board2;
+    } else {
+      b = board;
+    }
     let m = gm
     let team = this.team;
     let r = this.r;
@@ -403,331 +573,646 @@ class Spot {
     let moves = [];
     let piece = this.piece;
     let id = this.id;
+    console.log(`mode: ${m}`)
 
-    // if admin
-    if (admin()) {
-      for (let r = 0;r < 8;r++) {
-        for (let c = 0;c < 8;c++) {
-          if (board[r][c].team != team) {
-            moves.push([r,c]);
+    if (gm == "standard" || gm == "queen attack" || gm == "lava bridge") {
+      // checks for moves king can make
+      if (piece == "k") {
+        ir = [0,1,1, 1, 0,-1,-1,-1];
+        ic = [1,1,0,-1,-1,-1, 0, 1];
+        for (let i = 0;i < 8;i++) {
+          if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 && board[r+ir[i]][c+ic[i]].team != team) {
+            nextBoard = getNextBoard(r,c,r+ir[i],c+ic[i]);
+            if (!(nextBoard[r+ir[i]][c+ic[i]].isCheck("next"))) {
+              moves.push([r+ir[i],c+ic[i]]);
+            }
           }
         }
       }
-      return moves;
-    }
 
-    // checks for moves king can make
-    if (piece == "k") {
-      ir = [0,1,1, 1, 0,-1,-1,-1];
-      ic = [1,1,0,-1,-1,-1, 0, 1];
-      for (let i = 0;i < 8;i++) {
-        if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 && board[r+ir[i]][c+ic[i]].team != team) {
-          nextBoard = getNextBoard(r,c,r+ir[i],c+ic[i]);
-          if (!(nextBoard[r+ir[i]][c+ic[i]].isCheck("next"))) {
-            moves.push([r+ir[i],c+ic[i]]);
-          }
-        }
-      }
-    }
-
-    // finds moves for white pawns
-    if(id == "wp") {
-      if (r > 0) {
-        if (b[r-1][c].team == "-") /* up 1 */ {
-          nextBoard = getNextBoard(r,c,r-1,c);
-          if (inCheck) {
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r-1,c])
+      // finds moves for white pawns
+      if(id == "wp") {
+        if (r > 0) {
+          if (b[r-1][c].team == "-") /* up 1 */ {
+            nextBoard = getNextBoard(r,c,r-1,c);
+            if (inCheck) {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c])
+              }
+            } else {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c]);
+              }
             }
-          } else {
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r-1,c]);
-            }
-          }
-          if (r > 1) {  
-            if (r == 6 && b[r-2][c].team == "-") /* up 2 at start */ {
-              nextBoard = getNextBoard(r,c,r-2,c);
-              if (inCheck) {
-                if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-                  moves.push([r-2,c]);
-                }
-              } else {
-                if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-                  moves.push([r-2,c]);
+            if (r > 1) {  
+              if (r == 6 && b[r-2][c].team == "-") /* up 2 at start */ {
+                nextBoard = getNextBoard(r,c,r-2,c);
+                if (inCheck) {
+                  if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                    moves.push([r-2,c]);
+                  }
+                } else {
+                  if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                    moves.push([r-2,c]);
+                  }
                 }
               }
             }
           }
         }
-      }
-      if (r > 0 && c < 7) {
-        if (b[r-1][c+1].team == opp[team]) /* capture piece up 1 right 1 */ {
-          if (inCheck) {
-            nextBoard = getNextBoard(r,c,r-1,c+1);
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r-1,c+1]);
-            }
-          } else {
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r-1,c+1]);
-            }
-          }
-        }
-      }
-      if (r > 0 && c > 0) {
-        if (b[r-1][c-1].team == opp[team]) /* capture piece up 1 right 1 */ {
-          if (inCheck) {
-            nextBoard = getNextBoard(r,c,r-1,c-1);
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r-1,c-1]);
-            }
-          } else {
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r-1,c-1]);
+        if (r > 0 && c < 7) {
+          if (b[r-1][c+1].team == opp[team]) /* capture piece up 1 right 1 */ {
+            if (inCheck) {
+              nextBoard = getNextBoard(r,c,r-1,c+1);
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c+1]);
+              }
+            } else {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c+1]);
+              }
             }
           }
         }
-      }
-    }
-
-    // finds moves for black pawns
-    if(id == "bp") {
-      if (r < 7) {
-        if (b[r+1][c].team == "-") /* up 1 */ {
-          nextBoard = getNextBoard(r,c,r+1,c);
-          if (inCheck) {
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r+1,c])
-            }
-          } else {
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r+1,c]);
-            }
-          }
-          if (r < 6) {  
-            if (r == 1 && b[r+2][c].team == "-") /* up 2 at start */ {
-              nextBoard = getNextBoard(r,c,r+2,c);
-              if (inCheck) {
-                if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-                  moves.push([r+2,c]);
-                }
-              } else {
-                if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-                  moves.push([r+2,c]);
-                }
+        if (r > 0 && c > 0) {
+          if (b[r-1][c-1].team == opp[team]) /* capture piece up 1 right 1 */ {
+            if (inCheck) {
+              nextBoard = getNextBoard(r,c,r-1,c-1);
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c-1]);
+              }
+            } else {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c-1]);
               }
             }
           }
         }
       }
-      if (r < 7 && c < 7) {
-        if (b[r+1][c+1].team == opp[team]) /* capture piece up 1 right 1 */ {
-          if (inCheck) {
-            nextBoard = getNextBoard(r,c,r+1,c+1);
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r+1,c+1]);
-            }
-          } else {
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r+1,c+1]);
-            }
-          }
-        }
-      }
-      if (r < 7 && c > 0) {
-        if (b[r+1][c-1].team == opp[team]) /* capture piece up 1 right 1 */ {
-          if (inCheck) {
-            nextBoard = getNextBoard(r,c,r+1,c-1);
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r+1,c-1]);
-            }
-          } else {
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r+1,c-1]);
-            }
-          }
-        }
-      }
-    }
 
-    // finds moves for knights
-    if (piece == "n") {
-      ir = [1,2,2,1,-1,-2,-2,-1]; 
-      ic = [2,1,-1,-2,-2,-1,1,2];
-      for (let i = 0; i < 8;i++) {
-        if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 ) {
-          if (inCheck) {
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r+ir[i], c+ic[i]]);
+      // finds moves for black pawns
+      if(id == "bp") {
+        if (r < 7) {
+          if (b[r+1][c].team == "-") /* up 1 */ {
+            nextBoard = getNextBoard(r,c,r+1,c);
+            if (inCheck) {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c])
+              }
+            } else {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c]);
+              }
             }
-          } else if (b[r+ir[i]][c+ic[i]].team != team) {
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r+ir[i], c+ic[i]]);
+            if (r < 6) {  
+              if (r == 1 && b[r+2][c].team == "-") /* up 2 at start */ {
+                nextBoard = getNextBoard(r,c,r+2,c);
+                if (inCheck) {
+                  if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                    moves.push([r+2,c]);
+                  }
+                } else {
+                  if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                    moves.push([r+2,c]);
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (r < 7 && c < 7) {
+          if (b[r+1][c+1].team == opp[team]) /* capture piece up 1 right 1 */ {
+            if (inCheck) {
+              nextBoard = getNextBoard(r,c,r+1,c+1);
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c+1]);
+              }
+            } else {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c+1]);
+              }
+            }
+          }
+        }
+        if (r < 7 && c > 0) {
+          if (b[r+1][c-1].team == opp[team]) /* capture piece up 1 right 1 */ {
+            if (inCheck) {
+              nextBoard = getNextBoard(r,c,r+1,c-1);
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c-1]);
+              }
+            } else {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c-1]);
+              }
             }
           }
         }
       }
-    }
 
-    // finds moves for rooks an queen in rook directions
-    if (piece == "r" || piece == "q") {
-      if (r < 7) {
-        for (let i = r+1;i < 8;i++) {
-          if (b[i][c].team == team || (m == "lava bridge" && (c < 3 || c > 4) && (i == 3 || i == 4))) {
-            break;
-          } else {
-            nextBoard = getNextBoard(r,c,i,c);
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([i,c]);
-            }
-            if (b[i][c].team == opp[team]) {
-              break;
-            }
-          }
-        }
-      }
-      if (c < 7) {
-        for (let i = c+1;i < 8;i++) {
-          if (b[r][i].team == team) {
-            break;
-          } else {
-            nextBoard = getNextBoard(r,c,r,i);
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r,i]);
-            }
-            if (b[r][i].team == opp[team]) {
-              break;
+      // finds moves for knights
+      if (piece == "n") {
+        ir = [1,2,2,1,-1,-2,-2,-1]; 
+        ic = [2,1,-1,-2,-2,-1,1,2];
+        for (let i = 0; i < 8;i++) {
+          if (r+ir[i] > -1 && r+ir[i] < 8 && c+ic[i] > -1 && c+ic[i] < 8 ) {
+            if (inCheck) {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+ir[i], c+ic[i]]);
+              }
+            } else if (b[r+ir[i]][c+ic[i]].team != team) {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+ir[i], c+ic[i]]);
+              }
             }
           }
         }
       }
-      if (r > 0) {
-        for (let i = r-1;i > -1;i--) {
-          if (b[i][c].team == team || (m == "lava bridge" && (c < 3 || c > 4) && (i == 3 || i == 4))) {
-            break;
-          } else {
-            nextBoard = getNextBoard(r,c,i,c);
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([i,c]);
-            }
-            if (b[i][c].team == opp[team]) {
-              break;
-            }
-          }
-        }
-      }
-      if (c > 0) {
-        for (let i = c-1;i > -1;i--) {
-          if (b[r][i].team == team) {
-            break;
-          } else {
-            nextBoard = getNextBoard(r,c,r,i);
-            if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-              moves.push([r,i]);
-            }
-            if (b[r][i].team == opp[team]) {
-              break;
-            }
-          }
-        }
-      }
-    }
 
-    // finds move for bishops and queens in queen directions
-    if (piece == "b" || piece == "q") {
-      for (let i = 1;i < 8;i++) {
-        if (r+i == 8 || c+i == 8) {
-          break;
-        }
-        nextBoard = getNextBoard(r,c,r+i,c+i);
-        if (m = "lava bridge" && (r+i == 3 || r+i == 4) && (c+i < 3 || c+i  > 4)) {
-          break;
-        } else if (b[r+i][c+i].team == "-") {
-          if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-            moves.push([r+i, c+i]);
+      // finds moves for rooks an queen in rook directions
+      if (piece == "r" || piece == "q") {
+        if (r < 7) {
+          for (let i = r+1;i < 8;i++) {
+            if (b[i][c].team == team || (m == "lava bridge" && (c < 3 || c > 4) && (i == 3 || i == 4))) {
+              break;
+            } else {
+              nextBoard = getNextBoard(r,c,i,c);
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([i,c]);
+              }
+              if (b[i][c].team == opp[team]) {
+                break;
+              }
+            }
           }
-        } else {
-          if (b[r+i][c+i].team == team) /* down right */ {
+        }
+        if (c < 7) {
+          for (let i = c+1;i < 8;i++) {
+            if (b[r][i].team == team) {
+              break;
+            } else {
+              nextBoard = getNextBoard(r,c,r,i);
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r,i]);
+              }
+              if (b[r][i].team == opp[team]) {
+                break;
+              }
+            }
+          }
+        }
+        if (r > 0) {
+          for (let i = r-1;i > -1;i--) {
+            if (b[i][c].team == team || (m == "lava bridge" && (c < 3 || c > 4) && (i == 3 || i == 4))) {
+              break;
+            } else {
+              nextBoard = getNextBoard(r,c,i,c);
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([i,c]);
+              }
+              if (b[i][c].team == opp[team]) {
+                break;
+              }
+            }
+          }
+        }
+        if (c > 0) {
+          for (let i = c-1;i > -1;i--) {
+            if (b[r][i].team == team) {
+              break;
+            } else {
+              nextBoard = getNextBoard(r,c,r,i);
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r,i]);
+              }
+              if (b[r][i].team == opp[team]) {
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // finds move for bishops and queens in queen directions
+      if (piece == "b" || piece == "q") {
+        for (let i = 1;i < 8;i++) {
+          if (r+i == 8 || c+i == 8) {
             break;
-          } else {
+          }
+          nextBoard = getNextBoard(r,c,r+i,c+i);
+          if (m == "lava bridge" && (r+i == 3 || r+i == 4) && (c+i < 3 || c+i  > 4)) {
+            break;
+          } 
+          if (b[r+i][c+i].team == "-") {
             if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
               moves.push([r+i, c+i]);
             }
-            break;
-          }
-        } 
-      }
-      for (let i = 1;i < 8;i++) {
-        if (r+i == 8 || c-i == -1) {
-          break;
-        }
-        nextBoard = getNextBoard(r,c,r+i,c-i);
-        if (m = "lava bridge" && (r+i == 3 || r+i == 4) && (c-i < 3 || c-i > 4)) {
-          break;
-        } else if (b[r+i][c-i].team == "-") {
-          if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-            moves.push([r+i, c-i]);
-          }
-        } else {
-          if (b[r+i][c-i].team == team) /* down left */ {
-            break;
           } else {
+            if (b[r+i][c+i].team == team) /* down right */ {
+              break;
+            } else {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+i, c+i]);
+              }
+              break;
+            }
+          } 
+        }
+        for (let i = 1;i < 8;i++) {
+          if (r+i == 8 || c-i == -1) {
+            break;
+          }
+          nextBoard = getNextBoard(r,c,r+i,c-i);
+          if (m == "lava bridge" && (r+i == 3 || r+i == 4) && (c-i < 3 || c-i > 4)) {
+            break;
+          } 
+          if (b[r+i][c-i].team == "-") {
             if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
               moves.push([r+i, c-i]);
             }
-            break;
-          }
-        } 
-      }
-      for (let i = 1;i < 8;i++) {
-        if (r-i == -1 || c-i == -1) {
-          break;
-        }
-        nextBoard = getNextBoard(r,c,r-i,c-i);
-        if (m = "lava bridge" && (r-i == 3 || r-i == 4) && (c-i < 3 || c-i > 4)) {
-          break;
-        } else if (b[r-i][c-i].team == "-") {
-          if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
-            moves.push([r-i, c-i]);
-          }
-        } else {
-          if (b[r-i][c-i].team == team) /* up left */ {
-            break;
           } else {
+            if (b[r+i][c-i].team == team) /* down left */ {
+              break;
+            } else {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+i, c-i]);
+              }
+              break;
+            }
+          } 
+        }
+        for (let i = 1;i < 8;i++) {
+          if (r-i == -1 || c-i == -1) {
+            break;
+          }
+          nextBoard = getNextBoard(r,c,r-i,c-i);
+          if (m == "lava bridge" && (r-i == 3 || r-i == 4) && (c-i < 3 || c-i > 4)) {
+            break;
+          } 
+          if (b[r-i][c-i].team == "-") {
             if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
               moves.push([r-i, c-i]);
             }
-            break;
-          }
-        } 
-      }
-      for (let i = 1;i < 8;i++) {
-        if (r-i == -1 || c+i == 8) {
-          break;
-        }
-        nextBoard = getNextBoard(r,c,r-i,c+i);
-        if (m = "lava bridge" && (r-i == 3 || r-i == 4) && (c+i < 3 || c+i > 4)) {
-          break;
-        } else if (b[r-i][c+i].team == "-") {
-          if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) { 
-            moves.push([r-i, c+i]);
-          }
-        } else {
-          if (b[r-i][c+i].team == team) /* up right */ {
-            break;
           } else {
+            if (b[r-i][c-i].team == team) /* up left */ {
+              break;
+            } else {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-i, c-i]);
+              }
+              break;
+            }
+          } 
+        }
+        for (let i = 1;i < 8;i++) {
+          if (r-i == -1 || c+i == 8) {
+            break;
+          }
+          nextBoard = getNextBoard(r,c,r-i,c+i);
+          if (m == "lava bridge" && (r-i == 3 || r-i == 4) && (c+i < 3 || c+i > 4)) {
+            break;
+          } 
+          if (b[r-i][c+i].team == "-") {
             if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) { 
               moves.push([r-i, c+i]);
             }
+          } else {
+            if (b[r-i][c+i].team == team) /* up right */ {
+              break;
+            } else {
+              if (!(nextBoard[kingLoc[0]][kingLoc[1]].isCheck("next"))) { 
+                moves.push([r-i, c+i]);
+              }
+              break;
+            }
+          } 
+        }
+      }
+    //---------------------------------------------------------- finding move for double mode ------------------------------------------------------
+    } else if (gm == "double") {
+      // checks for moves king can make
+      if (piece == "k") {
+        ir = [0,1,1, 1, 0,-1,-1,-1];
+        ic = [1,1,0,-1,-1,-1, 0, 1];
+        for (let i = 0;i < 16;i++) {
+          if (r+ir[i] > -1 && r+ir[i] < 16 && c+ic[i] > -1 && c+ic[i] < 16 && board2[r+ir[i]][c+ic[i]].team != team) {
+            nextBoard2 = getNextBoard(r,c,r+ir[i],c+ic[i]);
+            if (!(nextBoard2[r+ir[i]][c+ic[i]].isCheck("next"))) {
+              moves.push([r+ir[i],c+ic[i]]);
+            }
+          }
+        }
+      }
+
+      // finds moves for white pawns
+      if(id == "wp") {
+        if (r > 0) {
+          if (b[r-1][c].team == "-") /* up 1 */ {
+            nextBoard2 = getNextBoard(r,c,r-1,c);
+            if (inCheck) {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c])
+              }
+            } else {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c]);
+              }
+            }
+            if (r > 1) {  
+              if (r > 11 && b[r-2][c].team == "-") /* up 2 at start */ {
+                nextBoard2 = getNextBoard(r,c,r-2,c);
+                if (inCheck) {
+                  if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                    moves.push([r-2,c]);
+                  }
+                } else {
+                  if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                    moves.push([r-2,c]);
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (r > 0 && c < 15) {
+          if (b[r-1][c+1].team == opp[team]) /* capture piece up 1 right 1 */ {
+            if (inCheck) {
+              nextBoard2 = getNextBoard(r,c,r-1,c+1);
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c+1]);
+              }
+            } else {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c+1]);
+              }
+            }
+          }
+        }
+        if (r > 0 && c > 0) {
+          if (b[r-1][c-1].team == opp[team]) /* capture piece up 1 right 1 */ {
+            if (inCheck) {
+              nextBoard2 = getNextBoard(r,c,r-1,c-1);
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c-1]);
+              }
+            } else {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-1,c-1]);
+              }
+            }
+          }
+        }
+      }
+
+      // finds moves for black pawns
+      if(id == "bp") {
+        if (r < 15) {
+          if (b[r+1][c].team == "-") /* up 1 */ {
+            nextBoard2 = getNextBoard(r,c,r+1,c);
+            if (inCheck) {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c])
+              }
+            } else {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c]);
+              }
+            }
+            if (r < 14) {  
+              if (r < 4 && b[r+2][c].team == "-") /* up 2 at start */ {
+                nextBoard2 = getNextBoard(r,c,r+2,c);
+                if (inCheck) {
+                  if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                    moves.push([r+2,c]);
+                  }
+                } else {
+                  if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                    moves.push([r+2,c]);
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (r < 15 && c < 15) {
+          if (b[r+1][c+1].team == opp[team]) /* capture piece up 1 right 1 */ {
+            if (inCheck) {
+              nextBoard2 = getNextBoard(r,c,r+1,c+1);
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c+1]);
+              }
+            } else {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c+1]);
+              }
+            }
+          }
+        }
+        if (r < 15 && c > 0) {
+          if (b[r+1][c-1].team == opp[team]) /* capture piece up 1 right 1 */ {
+            if (inCheck) {
+              nextBoard2 = getNextBoard(r,c,r+1,c-1);
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c-1]);
+              }
+            } else {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+1,c-1]);
+              }
+            }
+          }
+        }
+      }
+
+      // finds moves for knights
+      if (piece == "n") {
+        ir = [1,2,2,1,-1,-2,-2,-1]; 
+        ic = [2,1,-1,-2,-2,-1,1,2];
+        for (let i = 0; i < 16;i++) {
+          if (r+ir[i] > -1 && r+ir[i] < 16 && c+ic[i] > -1 && c+ic[i] < 16 ) {
+            if (inCheck) {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+ir[i], c+ic[i]]);
+              }
+            } else if (b[r+ir[i]][c+ic[i]].team != team) {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+ir[i], c+ic[i]]);
+              }
+            }
+          }
+        }
+      }
+
+      // finds moves for rooks an queen in rook directions
+      if (piece == "r" || piece == "q") {
+        if (r < 15) {
+          for (let i = r+1;i < 16;i++) {
+            if (b[i][c].team == team || (m == "lava bridge" && (c < 3 || c > 4) && (i == 3 || i == 4))) {
+              break;
+            } else {
+              nextBoard2 = getNextBoard(r,c,i,c);
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([i,c]);
+              }
+              if (b[i][c].team == opp[team]) {
+                break;
+              }
+            }
+          }
+        }
+        if (c < 15) {
+          for (let i = c+1;i < 16;i++) {
+            if (b[r][i].team == team) {
+              break;
+            } else {
+              nextBoard2 = getNextBoard(r,c,r,i);
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r,i]);
+              }
+              if (b[r][i].team == opp[team]) {
+                break;
+              }
+            }
+          }
+        }
+        if (r > 0) {
+          for (let i = r-1;i > -1;i--) {
+            if (b[i][c].team == team || (m == "lava bridge" && (c < 3 || c > 4) && (i == 3 || i == 4))) {
+              break;
+            } else {
+              nextBoard2 = getNextBoard(r,c,i,c);
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([i,c]);
+              }
+              if (b[i][c].team == opp[team]) {
+                break;
+              }
+            }
+          }
+        }
+        if (c > 0) {
+          for (let i = c-1;i > -1;i--) {
+            if (b[r][i].team == team) {
+              break;
+            } else {
+              nextBoard2 = getNextBoard(r,c,r,i);
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r,i]);
+              }
+              if (b[r][i].team == opp[team]) {
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // finds move for bishops and queens in queen directions
+      if (piece == "b" || piece == "q") {
+        for (let i = 1;i < 16;i++) {
+          if (r+i == 16 || c+i == 16) {
             break;
           }
-        } 
+          nextBoard2 = getNextBoard(r,c,r+i,c+i);
+          if (m == "lava bridge" && (r+i == 3 || r+i == 4) && (c+i < 3 || c+i  > 4)) {
+            break;
+          } 
+          if (b[r+i][c+i].team == "-") {
+            if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+              moves.push([r+i, c+i]);
+            }
+          } else {
+            if (b[r+i][c+i].team == team) /* down right */ {
+              break;
+            } else {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+i, c+i]);
+              }
+              break;
+            }
+          } 
+        }
+        for (let i = 1;i < 16;i++) {
+          if (r+i == 16 || c-i == -1) {
+            break;
+          }
+          nextBoard2 = getNextBoard(r,c,r+i,c-i);
+          if (m == "lava bridge" && (r+i == 3 || r+i == 4) && (c-i < 3 || c-i > 4)) {
+            break;
+          } 
+          if (b[r+i][c-i].team == "-") {
+            if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+              moves.push([r+i, c-i]);
+            }
+          } else {
+            if (b[r+i][c-i].team == team) /* down left */ {
+              break;
+            } else {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r+i, c-i]);
+              }
+              break;
+            }
+          } 
+        }
+        for (let i = 1;i < 16;i++) {
+          if (r-i == -1 || c-i == -1) {
+            break;
+          }
+          nextBoard2 = getNextBoard(r,c,r-i,c-i);
+          if (m == "lava bridge" && (r-i == 3 || r-i == 4) && (c-i < 3 || c-i > 4)) {
+            break;
+          } 
+          if (b[r-i][c-i].team == "-") {
+            if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+              moves.push([r-i, c-i]);
+            }
+          } else {
+            if (b[r-i][c-i].team == team) /* up left */ {
+              break;
+            } else {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) {
+                moves.push([r-i, c-i]);
+              }
+              break;
+            }
+          } 
+        }
+        for (let i = 1;i < 16;i++) {
+          if (r-i == -1 || c+i == 16) {
+            break;
+          }
+          nextBoard2 = getNextBoard(r,c,r-i,c+i);
+          if (m == "lava bridge" && (r-i == 3 || r-i == 4) && (c+i < 3 || c+i > 4)) {
+            break;
+          } 
+          if (b[r-i][c+i].team == "-") {
+            if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) { 
+              moves.push([r-i, c+i]);
+            }
+          } else {
+            if (b[r-i][c+i].team == team) /* up right */ {
+              break;
+            } else {
+              if (!(nextBoard2[kingLoc[0]][kingLoc[1]].isCheck("next"))) { 
+                moves.push([r-i, c+i]);
+              }
+              break;
+            }
+          } 
+        }
       }
     }
 
     return moves;
   } // end of moves
 }
+
+const defaultBoard2 = 
+  `wbrbrbnbnbbbbbqbqbkbqbbbbbnbnbrbrbrbrbnbnbbbbbqbqbqbqbbbbbnbnbrbrbp
+  bpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbp
+  bpbp128wpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpw
+  pwpwpwrwrwnwnwbwbwqwqwqwbwbwnwnwrwrwrwrwnwnwbwbwqwqwqwkwbwbwnwnwrwr`;
 
 const defaultBoard = "wbrbnbbbqbkbbbnbrbpbpbpbpbpbpbpbp32wpwpwpwpwpwpwpwpwrwnwbwqwkwbwnwr";
 const queenAttackBoard = "wbqbqbqbqbkbqbqbqbpbpbpbpbpbpbpbp32wpwpwpwpwpwpwpwpwqwqwqwqwkwqwqwq";
@@ -760,7 +1245,12 @@ var board = [
 ];
 
 function getNextBoard(r1,c1,r2,c2) {
-  let result = copy2DArray(board)
+  let result;
+  if (gm == "double") {
+    result = copy2DArray(board2);
+  } else {
+    result = copy2DArray(board);
+  }
   result[r2][c2] = new Spot(r2,c2,`${result[r1][c1].team}${result[r1][c1].piece}`);
   result[r1][c1] = new Spot(r1,c1,"-=");
   return result;
@@ -824,16 +1314,259 @@ var prevBoard = [
    new Spot(7,4,"-="), new Spot(7,5,"-="), new Spot(7,6,"-="), new Spot(7,7,"-="),],
 ];
 
-const board_locs = {
-  "0,0" : [-21,-21], "0,1" : [-15,-21], "0,2" : [-9,-21], "0,3" : [-3,-21], "0,4" : [3,-21], "0,5" : [9,-21], "0,6" : [15,-21], "0,7" : [21,-21],
-  "1,0" : [-21,-15], "1,1" : [-15,-15], "1,2" : [-9,-15], "1,3" : [-3,-15], "1,4" : [3,-15], "1,5" : [9,-15], "1,6" : [15,-15], "1,7" : [21,-15],
-  "2,0" : [-21,-9], "2,1" : [-15,-9], "2,2" : [-9,-9], "2,3" : [-3,-9], "2,4" : [3,-9], "2,5" : [9,-9], "2,6" : [15,-9], "2,7" : [21,-9],
-  "3,0" : [-21,-3], "3,1" : [-15,-3], "3,2" : [-9,-3], "3,3" : [-3,-3], "3,4" : [3,-3], "3,5" : [9,-3], "3,6" : [15,-3], "3,7" : [21,-3],
-  "4,0" : [-21,3], "4,1" : [-15,3], "4,2" : [-9,3], "4,3" : [-3,3], "4,4" : [3,3], "4,5" : [9,3], "4,6" : [15,3], "4,7" : [21,3],
-  "5,0" : [-21,9], "5,1" : [-15,9], "5,2" : [-9,9], "5,3" : [-3,9], "5,4" : [3,9], "5,5" : [9,9], "5,6" : [15,9], "5,7" : [21,9],
-  "6,0" : [-21,15], "6,1" : [-15,15], "6,2" : [-9,15], "6,3" : [-3,15], "6,4" : [3,15], "6,5" : [9,15], "6,6" : [15,15], "6,7" : [21,15],
-  "7,0" : [-21,21], "7,1" : [-15,21], "7,2" : [-9,21], "7,3" : [-3,21], "7,4" : [3,21], "7,5" : [9,21], "7,6" : [15,21], "7,7" : [21,21],
-}  
+
+//----------------------------------------------------------- double boards ----------------------------------------------------------------
+var prevBoard2 = [
+  // row 0
+  [new Spot(0,0,"-="),  new Spot(0,1,"-="),  new Spot(0,2,"-="),  new Spot(0,3,"-="),
+   new Spot(0,4,"-="),  new Spot(0,5,"-="),  new Spot(0,6,"-="),  new Spot(0,7,"-="),
+   new Spot(0,8,"-="),  new Spot(0,9,"-="),  new Spot(0,10,"-="), new Spot(0,11,"-="),
+   new Spot(0,12,"-="), new Spot(0,13,"-="), new Spot(0,14,"-="), new Spot(0,15,"-="),],
+  // row 1
+  [new Spot(1,0,"-="),  new Spot(1,1,"-="),  new Spot(1,2,"-="),  new Spot(1,3,"-="),
+   new Spot(1,4,"-="),  new Spot(1,5,"-="),  new Spot(1,6,"-="),  new Spot(1,7,"-="),
+   new Spot(1,8,"-="),  new Spot(1,9,"-="),  new Spot(1,10,"-="), new Spot(1,11,"-="),
+   new Spot(1,12,"-="), new Spot(1,13,"-="), new Spot(1,14,"-="), new Spot(1,15,"-="),],
+  // row 2
+  [new Spot(2,0,"-="),  new Spot(2,1,"-="),  new Spot(2,2,"-="),  new Spot(2,3,"-="),
+   new Spot(2,4,"-="),  new Spot(2,5,"-="),  new Spot(2,6,"-="),  new Spot(2,7,"-="),
+   new Spot(2,8,"-="),  new Spot(2,9,"-="),  new Spot(2,10,"-="), new Spot(2,11,"-="),
+   new Spot(2,12,"-="), new Spot(2,13,"-="), new Spot(2,14,"-="), new Spot(2,15,"-="),],
+  // row 3
+  [new Spot(3,0,"-="),  new Spot(3,1,"-="),  new Spot(3,2,"-="),  new Spot(3,3,"-="),
+   new Spot(3,4,"-="),  new Spot(3,5,"-="),  new Spot(3,6,"-="),  new Spot(3,7,"-="),
+   new Spot(3,8,"-="),  new Spot(3,9,"-="),  new Spot(3,10,"-="), new Spot(3,11,"-="),
+   new Spot(3,12,"-="), new Spot(3,13,"-="), new Spot(3,14,"-="), new Spot(3,15,"-="),],
+  // row 4
+  [new Spot(4,0,"-="),  new Spot(4,1,"-="),  new Spot(4,2,"-="),  new Spot(4,3,"-="),
+   new Spot(4,4,"-="),  new Spot(4,5,"-="),  new Spot(4,6,"-="),  new Spot(4,7,"-="),
+   new Spot(4,8,"-="),  new Spot(4,9,"-="),  new Spot(4,10,"-="), new Spot(4,11,"-="),
+   new Spot(4,12,"-="), new Spot(4,13,"-="), new Spot(4,14,"-="), new Spot(4,15,"-="),],
+  // row 5
+  [new Spot(5,0,"-="),  new Spot(5,1,"-="),  new Spot(5,2,"-="),  new Spot(5,3,"-="),
+   new Spot(5,4,"-="),  new Spot(5,5,"-="),  new Spot(5,6,"-="),  new Spot(5,7,"-="),
+   new Spot(5,8,"-="),  new Spot(5,9,"-="),  new Spot(5,10,"-="), new Spot(5,11,"-="),
+   new Spot(5,12,"-="), new Spot(5,13,"-="), new Spot(5,14,"-="), new Spot(5,15,"-="),],
+  // row 6
+  [new Spot(6,0,"-="),  new Spot(6,1,"-="),  new Spot(6,2,"-="),  new Spot(6,3,"-="),
+   new Spot(6,4,"-="),  new Spot(6,5,"-="),  new Spot(6,6,"-="),  new Spot(6,7,"-="),
+   new Spot(6,8,"-="),  new Spot(6,9,"-="),  new Spot(6,10,"-="), new Spot(6,11,"-="),
+   new Spot(6,12,"-="), new Spot(6,13,"-="), new Spot(6,14,"-="), new Spot(6,15,"-="),],
+  // row 7
+  [new Spot(7,0,"-="),  new Spot(7,1,"-="),  new Spot(7,2,"-="),  new Spot(7,3,"-="),
+   new Spot(7,4,"-="),  new Spot(7,5,"-="),  new Spot(7,6,"-="),  new Spot(7,7,"-="),
+   new Spot(7,8,"-="),  new Spot(7,9,"-="),  new Spot(7,10,"-="), new Spot(7,11,"-="),
+   new Spot(7,12,"-="), new Spot(7,13,"-="), new Spot(7,14,"-="), new Spot(7,15,"-="),],
+  // row 8
+  [new Spot(8,0,"-="),  new Spot(8,1,"-="),  new Spot(8,2,"-="),  new Spot(8,3,"-="),
+   new Spot(8,4,"-="),  new Spot(8,5,"-="),  new Spot(8,6,"-="),  new Spot(8,7,"-="),
+   new Spot(8,8,"-="),  new Spot(8,9,"-="),  new Spot(8,10,"-="), new Spot(8,11,"-="),
+   new Spot(8,12,"-="), new Spot(8,13,"-="), new Spot(8,14,"-="), new Spot(8,15,"-="),],
+  // row 9
+  [new Spot(9,0,"-="),  new Spot(9,1,"-="),  new Spot(9,2,"-="),  new Spot(9,3,"-="),
+   new Spot(9,4,"-="),  new Spot(9,5,"-="),  new Spot(9,6,"-="),  new Spot(9,7,"-="),
+   new Spot(9,8,"-="),  new Spot(9,9,"-="),  new Spot(9,10,"-="), new Spot(9,11,"-="),
+   new Spot(9,12,"-="), new Spot(9,13,"-="), new Spot(9,14,"-="), new Spot(9,15,"-="),],
+  // row 10
+  [new Spot(10,0,"-="),  new Spot(10,1,"-="),  new Spot(10,2,"-="),  new Spot(10,3,"-="),
+   new Spot(10,4,"-="),  new Spot(10,5,"-="),  new Spot(10,6,"-="),  new Spot(10,7,"-="),
+   new Spot(10,8,"-="),  new Spot(10,9,"-="),  new Spot(10,10,"-="), new Spot(10,11,"-="),
+   new Spot(10,12,"-="), new Spot(10,13,"-="), new Spot(10,14,"-="), new Spot(10,15,"-="),],
+  // row 11
+  [new Spot(11,0,"-="),  new Spot(11,1,"-="),  new Spot(11,2,"-="),  new Spot(11,3,"-="),
+   new Spot(11,4,"-="),  new Spot(11,5,"-="),  new Spot(11,6,"-="),  new Spot(11,7,"-="),
+   new Spot(11,8,"-="),  new Spot(11,9,"-="),  new Spot(11,10,"-="), new Spot(11,11,"-="),
+   new Spot(11,12,"-="), new Spot(11,13,"-="), new Spot(11,14,"-="), new Spot(11,15,"-="),],
+  // row 12
+  [new Spot(12,0,"-="),  new Spot(12,1,"-="),  new Spot(12,2,"-="),  new Spot(12,3,"-="),
+   new Spot(12,4,"-="),  new Spot(12,5,"-="),  new Spot(12,6,"-="),  new Spot(12,7,"-="),
+   new Spot(12,8,"-="),  new Spot(12,9,"-="),  new Spot(12,10,"-="), new Spot(12,11,"-="),
+   new Spot(12,12,"-="), new Spot(12,13,"-="), new Spot(12,14,"-="), new Spot(12,15,"-="),],
+  // row 13
+  [new Spot(13,0,"-="),  new Spot(13,1,"-="),  new Spot(13,2,"-="),  new Spot(13,3,"-="),
+   new Spot(13,4,"-="),  new Spot(13,5,"-="),  new Spot(13,6,"-="),  new Spot(13,7,"-="),
+   new Spot(13,8,"-="),  new Spot(13,9,"-="),  new Spot(13,10,"-="), new Spot(13,11,"-="),
+   new Spot(13,12,"-="), new Spot(13,13,"-="), new Spot(13,14,"-="), new Spot(13,15,"-="),],
+  // row 14
+  [new Spot(14,0,"-="),  new Spot(14,1,"-="),  new Spot(14,2,"-="),  new Spot(14,3,"-="),
+   new Spot(14,4,"-="),  new Spot(14,5,"-="),  new Spot(14,6,"-="),  new Spot(14,7,"-="),
+   new Spot(14,8,"-="),  new Spot(14,9,"-="),  new Spot(14,10,"-="), new Spot(14,11,"-="),
+   new Spot(14,12,"-="), new Spot(14,13,"-="), new Spot(14,14,"-="), new Spot(14,15,"-="),],
+  // row 15
+  [new Spot(15,0,"-="),  new Spot(15,1,"-="),  new Spot(15,2,"-="),  new Spot(15,3,"-="),
+   new Spot(15,4,"-="),  new Spot(15,5,"-="),  new Spot(15,6,"-="),  new Spot(15,7,"-="),
+   new Spot(15,8,"-="),  new Spot(15,9,"-="),  new Spot(15,10,"-="), new Spot(15,11,"-="),
+   new Spot(15,12,"-="), new Spot(15,13,"-="), new Spot(15,14,"-="), new Spot(15,15,"-="),],
+];
+
+var board2 = [
+  // row 0
+  [new Spot(0,0,"br"),  new Spot(0,1,"br"),  new Spot(0,2,"bn"),  new Spot(0,3,"bn"),
+   new Spot(0,4,"bb"),  new Spot(0,5,"bb"),  new Spot(0,6,"bq"),  new Spot(0,7,"bq"),
+   new Spot(0,8,"bk"),  new Spot(0,9,"bq"),  new Spot(0,10,"bb"), new Spot(0,11,"bb"),
+   new Spot(0,12,"bn"), new Spot(0,13,"bn"), new Spot(0,14,"br"), new Spot(0,15,"br"),],
+  // row 1
+  [new Spot(1,0,"br"),  new Spot(1,1,"br"),  new Spot(1,2,"bn"),  new Spot(1,3,"bn"),
+   new Spot(1,4,"bb"),  new Spot(1,5,"bb"),  new Spot(1,6,"bq"),  new Spot(1,7,"bq"),
+   new Spot(1,8,"bq"),  new Spot(1,9,"bq"),  new Spot(1,10,"bb"), new Spot(1,11,"bb"),
+   new Spot(1,12,"bn"), new Spot(1,13,"bn"), new Spot(1,14,"br"), new Spot(1,15,"br"),],
+  // row 2
+  [new Spot(2,0,"bp"),  new Spot(2,1,"bp"),  new Spot(2,2,"bp"),  new Spot(2,3,"bp"),
+   new Spot(2,4,"bp"),  new Spot(2,5,"bp"),  new Spot(2,6,"bp"),  new Spot(2,7,"bp"),
+   new Spot(2,8,"bp"),  new Spot(2,9,"bp"),  new Spot(2,10,"bp"), new Spot(2,11,"bp"),
+   new Spot(2,12,"bp"), new Spot(2,13,"bp"), new Spot(2,14,"bp"), new Spot(2,15,"bp"),],
+  // row 3
+  [new Spot(3,0,"bp"),  new Spot(3,1,"bp"),  new Spot(3,2,"bp"),  new Spot(3,3,"bp"),
+   new Spot(3,4,"bp"),  new Spot(3,5,"bp"),  new Spot(3,6,"bp"),  new Spot(3,7,"bp"),
+   new Spot(3,8,"bp"),  new Spot(3,9,"bp"),  new Spot(3,10,"bp"), new Spot(3,11,"bp"),
+   new Spot(3,12,"bp"), new Spot(3,13,"bp"), new Spot(3,14,"bp"), new Spot(3,15,"bp"),],
+  // row 4
+  [new Spot(4,0,"-="),  new Spot(4,1,"-="),  new Spot(4,2,"-="),  new Spot(4,3,"-="),
+   new Spot(4,4,"-="),  new Spot(4,5,"-="),  new Spot(4,6,"-="),  new Spot(4,7,"-="),
+   new Spot(4,8,"-="),  new Spot(4,9,"-="),  new Spot(4,10,"-="), new Spot(4,11,"-="),
+   new Spot(4,12,"-="), new Spot(4,13,"-="), new Spot(4,14,"-="), new Spot(4,15,"-="),],
+  // row 5
+  [new Spot(5,0,"-="),  new Spot(5,1,"-="),  new Spot(5,2,"-="),  new Spot(5,3,"-="),
+   new Spot(5,4,"-="),  new Spot(5,5,"-="),  new Spot(5,6,"-="),  new Spot(5,7,"-="),
+   new Spot(5,8,"-="),  new Spot(5,9,"-="),  new Spot(5,10,"-="), new Spot(5,11,"-="),
+   new Spot(5,12,"-="), new Spot(5,13,"-="), new Spot(5,14,"-="), new Spot(5,15,"-="),],
+  // row 6
+  [new Spot(6,0,"-="),  new Spot(6,1,"-="),  new Spot(6,2,"-="),  new Spot(6,3,"-="),
+   new Spot(6,4,"-="),  new Spot(6,5,"-="),  new Spot(6,6,"-="),  new Spot(6,7,"-="),
+   new Spot(6,8,"-="),  new Spot(6,9,"-="),  new Spot(6,10,"-="), new Spot(6,11,"-="),
+   new Spot(6,12,"-="), new Spot(6,13,"-="), new Spot(6,14,"-="), new Spot(6,15,"-="),],
+  // row 7
+  [new Spot(7,0,"-="),  new Spot(7,1,"-="),  new Spot(7,2,"-="),  new Spot(7,3,"-="),
+   new Spot(7,4,"-="),  new Spot(7,5,"-="),  new Spot(7,6,"-="),  new Spot(7,7,"-="),
+   new Spot(7,8,"-="),  new Spot(7,9,"-="),  new Spot(7,10,"-="), new Spot(7,11,"-="),
+   new Spot(7,12,"-="), new Spot(7,13,"-="), new Spot(7,14,"-="), new Spot(7,15,"-="),],
+  // row 8
+  [new Spot(8,0,"-="),  new Spot(8,1,"-="),  new Spot(8,2,"-="),  new Spot(8,3,"-="),
+   new Spot(8,4,"-="),  new Spot(8,5,"-="),  new Spot(8,6,"-="),  new Spot(8,7,"-="),
+   new Spot(8,8,"-="),  new Spot(8,9,"-="),  new Spot(8,10,"-="), new Spot(8,11,"-="),
+   new Spot(8,12,"-="), new Spot(8,13,"-="), new Spot(8,14,"-="), new Spot(8,15,"-="),],
+  // row 9
+  [new Spot(9,0,"-="),  new Spot(9,1,"-="),  new Spot(9,2,"-="),  new Spot(9,3,"-="),
+   new Spot(9,4,"-="),  new Spot(9,5,"-="),  new Spot(9,6,"-="),  new Spot(9,7,"-="),
+   new Spot(9,8,"-="),  new Spot(9,9,"-="),  new Spot(9,10,"-="), new Spot(9,11,"-="),
+   new Spot(9,12,"-="), new Spot(9,13,"-="), new Spot(9,14,"-="), new Spot(9,15,"-="),],
+  // row 10
+  [new Spot(10,0,"-="),  new Spot(10,1,"-="),  new Spot(10,2,"-="),  new Spot(10,3,"-="),
+   new Spot(10,4,"-="),  new Spot(10,5,"-="),  new Spot(10,6,"-="),  new Spot(10,7,"-="),
+   new Spot(10,8,"-="),  new Spot(10,9,"-="),  new Spot(10,10,"-="), new Spot(10,11,"-="),
+   new Spot(10,12,"-="), new Spot(10,13,"-="), new Spot(10,14,"-="), new Spot(10,15,"-="),],
+  // row 11
+  [new Spot(11,0,"-="),  new Spot(11,1,"-="),  new Spot(11,2,"-="),  new Spot(11,3,"-="),
+   new Spot(11,4,"-="),  new Spot(11,5,"-="),  new Spot(11,6,"-="),  new Spot(11,7,"-="),
+   new Spot(11,8,"-="),  new Spot(11,9,"-="),  new Spot(11,10,"-="), new Spot(11,11,"-="),
+   new Spot(11,12,"-="), new Spot(11,13,"-="), new Spot(11,14,"-="), new Spot(11,15,"-="),],
+  // row 12
+  [new Spot(12,0,"wp"),  new Spot(12,1,"wp"),  new Spot(12,2,"wp"),  new Spot(12,3,"wp"),
+   new Spot(12,4,"wp"),  new Spot(12,5,"wp"),  new Spot(12,6,"wp"),  new Spot(12,7,"wp"),
+   new Spot(12,8,"wp"),  new Spot(12,9,"wp"),  new Spot(12,10,"wp"), new Spot(12,11,"wp"),
+   new Spot(12,12,"wp"), new Spot(12,13,"wp"), new Spot(12,14,"wp"), new Spot(12,15,"wp"),],
+  // row 13
+  [new Spot(13,0,"wp"),  new Spot(13,1,"wp"),  new Spot(13,2,"wp"),  new Spot(13,3,"wp"),
+   new Spot(13,4,"wp"),  new Spot(13,5,"wp"),  new Spot(13,6,"wp"),  new Spot(13,7,"wp"),
+   new Spot(13,8,"wp"),  new Spot(13,9,"wp"),  new Spot(13,10,"wp"), new Spot(13,11,"wp"),
+   new Spot(13,12,"wp"), new Spot(13,13,"wp"), new Spot(13,14,"wp"), new Spot(13,15,"wp"),],
+  // row 14
+  [new Spot(14,0,"wr"),  new Spot(14,1,"wr"),  new Spot(14,2,"wn"),  new Spot(14,3,"wn"),
+   new Spot(14,4,"wb"),  new Spot(14,5,"wb"),  new Spot(14,6,"wq"),  new Spot(14,7,"wq"),
+   new Spot(14,8,"wq"),  new Spot(14,9,"wq"),  new Spot(14,10,"wb"), new Spot(14,11,"wb"),
+   new Spot(14,12,"wn"), new Spot(14,13,"wn"), new Spot(14,14,"wr"), new Spot(14,15,"wr"),],
+  // row 15
+  [new Spot(15,0,"wr"),  new Spot(15,1,"wr"),  new Spot(15,2,"wn"),  new Spot(15,3,"wn"),
+   new Spot(15,4,"wb"),  new Spot(15,5,"wb"),  new Spot(15,6,"wq"),  new Spot(15,7,"wq"),
+   new Spot(15,8,"wq"),  new Spot(15,9,"wk"),  new Spot(15,10,"wb"), new Spot(15,11,"wb"),
+   new Spot(15,12,"wn"), new Spot(15,13,"wn"), new Spot(15,14,"wr"), new Spot(15,15,"wr"),],
+];
+
+var nextBoard2 = [
+  // row 0
+  [new Spot(0,0,"br"),  new Spot(0,1,"br"),  new Spot(0,2,"bn"),  new Spot(0,3,"bn"),
+   new Spot(0,4,"bb"),  new Spot(0,5,"bb"),  new Spot(0,6,"bq"),  new Spot(0,7,"bq"),
+   new Spot(0,8,"bk"),  new Spot(0,9,"bq"),  new Spot(0,10,"bb"), new Spot(0,11,"bb"),
+   new Spot(0,12,"bn"), new Spot(0,13,"bn"), new Spot(0,14,"br"), new Spot(0,15,"br"),],
+  // row 1
+  [new Spot(1,0,"br"),  new Spot(1,1,"br"),  new Spot(1,2,"bn"),  new Spot(1,3,"bn"),
+   new Spot(1,4,"bb"),  new Spot(1,5,"bb"),  new Spot(1,6,"bq"),  new Spot(1,7,"bq"),
+   new Spot(1,8,"bq"),  new Spot(1,9,"bq"),  new Spot(1,10,"bb"), new Spot(1,11,"bb"),
+   new Spot(1,12,"bn"), new Spot(1,13,"bn"), new Spot(1,14,"br"), new Spot(1,15,"br"),],
+  // row 2
+  [new Spot(2,0,"bp"),  new Spot(2,1,"bp"),  new Spot(2,2,"bp"),  new Spot(2,3,"bp"),
+   new Spot(2,4,"bp"),  new Spot(2,5,"bp"),  new Spot(2,6,"bp"),  new Spot(2,7,"bp"),
+   new Spot(2,8,"bp"),  new Spot(2,9,"bp"),  new Spot(2,10,"bp"), new Spot(2,11,"bp"),
+   new Spot(2,12,"bp"), new Spot(2,13,"bp"), new Spot(2,14,"bp"), new Spot(2,15,"bp"),],
+  // row 3
+  [new Spot(3,0,"bp"),  new Spot(3,1,"bp"),  new Spot(3,2,"bp"),  new Spot(3,3,"bp"),
+   new Spot(3,4,"bp"),  new Spot(3,5,"bp"),  new Spot(3,6,"bp"),  new Spot(3,7,"bp"),
+   new Spot(3,8,"bp"),  new Spot(3,9,"bp"),  new Spot(3,10,"bp"), new Spot(3,11,"bp"),
+   new Spot(3,12,"bp"), new Spot(3,13,"bp"), new Spot(3,14,"bp"), new Spot(3,15,"bp"),],
+  // row 4
+  [new Spot(4,0,"-="),  new Spot(4,1,"-="),  new Spot(4,2,"-="),  new Spot(4,3,"-="),
+   new Spot(4,4,"-="),  new Spot(4,5,"-="),  new Spot(4,6,"-="),  new Spot(4,7,"-="),
+   new Spot(4,8,"-="),  new Spot(4,9,"-="),  new Spot(4,10,"-="), new Spot(4,11,"-="),
+   new Spot(4,12,"-="), new Spot(4,13,"-="), new Spot(4,14,"-="), new Spot(4,15,"-="),],
+  // row 5
+  [new Spot(5,0,"-="),  new Spot(5,1,"-="),  new Spot(5,2,"-="),  new Spot(5,3,"-="),
+   new Spot(5,4,"-="),  new Spot(5,5,"-="),  new Spot(5,6,"-="),  new Spot(5,7,"-="),
+   new Spot(5,8,"-="),  new Spot(5,9,"-="),  new Spot(5,10,"-="), new Spot(5,11,"-="),
+   new Spot(5,12,"-="), new Spot(5,13,"-="), new Spot(5,14,"-="), new Spot(5,15,"-="),],
+  // row 6
+  [new Spot(6,0,"-="),  new Spot(6,1,"-="),  new Spot(6,2,"-="),  new Spot(6,3,"-="),
+   new Spot(6,4,"-="),  new Spot(6,5,"-="),  new Spot(6,6,"-="),  new Spot(6,7,"-="),
+   new Spot(6,8,"-="),  new Spot(6,9,"-="),  new Spot(6,10,"-="), new Spot(6,11,"-="),
+   new Spot(6,12,"-="), new Spot(6,13,"-="), new Spot(6,14,"-="), new Spot(6,15,"-="),],
+  // row 7
+  [new Spot(7,0,"-="),  new Spot(7,1,"-="),  new Spot(7,2,"-="),  new Spot(7,3,"-="),
+   new Spot(7,4,"-="),  new Spot(7,5,"-="),  new Spot(7,6,"-="),  new Spot(7,7,"-="),
+   new Spot(7,8,"-="),  new Spot(7,9,"-="),  new Spot(7,10,"-="), new Spot(7,11,"-="),
+   new Spot(7,12,"-="), new Spot(7,13,"-="), new Spot(7,14,"-="), new Spot(7,15,"-="),],
+  // row 8
+  [new Spot(8,0,"-="),  new Spot(8,1,"-="),  new Spot(8,2,"-="),  new Spot(8,3,"-="),
+   new Spot(8,4,"-="),  new Spot(8,5,"-="),  new Spot(8,6,"-="),  new Spot(8,7,"-="),
+   new Spot(8,8,"-="),  new Spot(8,9,"-="),  new Spot(8,10,"-="), new Spot(8,11,"-="),
+   new Spot(8,12,"-="), new Spot(8,13,"-="), new Spot(8,14,"-="), new Spot(8,15,"-="),],
+  // row 9
+  [new Spot(9,0,"-="),  new Spot(9,1,"-="),  new Spot(9,2,"-="),  new Spot(9,3,"-="),
+   new Spot(9,4,"-="),  new Spot(9,5,"-="),  new Spot(9,6,"-="),  new Spot(9,7,"-="),
+   new Spot(9,8,"-="),  new Spot(9,9,"-="),  new Spot(9,10,"-="), new Spot(9,11,"-="),
+   new Spot(9,12,"-="), new Spot(9,13,"-="), new Spot(9,14,"-="), new Spot(9,15,"-="),],
+  // row 10
+  [new Spot(10,0,"-="),  new Spot(10,1,"-="),  new Spot(10,2,"-="),  new Spot(10,3,"-="),
+   new Spot(10,4,"-="),  new Spot(10,5,"-="),  new Spot(10,6,"-="),  new Spot(10,7,"-="),
+   new Spot(10,8,"-="),  new Spot(10,9,"-="),  new Spot(10,10,"-="), new Spot(10,11,"-="),
+   new Spot(10,12,"-="), new Spot(10,13,"-="), new Spot(10,14,"-="), new Spot(10,15,"-="),],
+  // row 11
+  [new Spot(11,0,"-="),  new Spot(11,1,"-="),  new Spot(11,2,"-="),  new Spot(11,3,"-="),
+   new Spot(11,4,"-="),  new Spot(11,5,"-="),  new Spot(11,6,"-="),  new Spot(11,7,"-="),
+   new Spot(11,8,"-="),  new Spot(11,9,"-="),  new Spot(11,10,"-="), new Spot(11,11,"-="),
+   new Spot(11,12,"-="), new Spot(11,13,"-="), new Spot(11,14,"-="), new Spot(11,15,"-="),],
+  // row 12
+  [new Spot(12,0,"wp"),  new Spot(12,1,"wp"),  new Spot(12,2,"wp"),  new Spot(12,3,"wp"),
+   new Spot(12,4,"wp"),  new Spot(12,5,"wp"),  new Spot(12,6,"wp"),  new Spot(12,7,"wp"),
+   new Spot(12,8,"wp"),  new Spot(12,9,"wp"),  new Spot(12,10,"wp"), new Spot(12,11,"wp"),
+   new Spot(12,12,"wp"), new Spot(12,13,"wp"), new Spot(12,14,"wp"), new Spot(12,15,"wp"),],
+  // row 13
+  [new Spot(13,0,"wp"),  new Spot(13,1,"wp"),  new Spot(13,2,"wp"),  new Spot(13,3,"wp"),
+   new Spot(13,4,"wp"),  new Spot(13,5,"wp"),  new Spot(13,6,"wp"),  new Spot(13,7,"wp"),
+   new Spot(13,8,"wp"),  new Spot(13,9,"wp"),  new Spot(13,10,"wp"), new Spot(13,11,"wp"),
+   new Spot(13,12,"wp"), new Spot(13,13,"wp"), new Spot(13,14,"wp"), new Spot(13,15,"wp"),],
+  // row 14
+  [new Spot(14,0,"wr"),  new Spot(14,1,"wr"),  new Spot(14,2,"wn"),  new Spot(14,3,"wn"),
+   new Spot(14,4,"wb"),  new Spot(14,5,"wb"),  new Spot(14,6,"wq"),  new Spot(14,7,"wq"),
+   new Spot(14,8,"wq"),  new Spot(14,9,"wq"),  new Spot(14,10,"wb"), new Spot(14,11,"wb"),
+   new Spot(14,12,"wn"), new Spot(14,13,"wn"), new Spot(14,14,"wr"), new Spot(14,15,"wr"),],
+  // row 15
+  [new Spot(15,0,"wr"),  new Spot(15,1,"wr"),  new Spot(15,2,"wn"),  new Spot(15,3,"wn"),
+   new Spot(15,4,"wb"),  new Spot(15,5,"wb"),  new Spot(15,6,"wq"),  new Spot(15,7,"wq"),
+   new Spot(15,8,"wq"),  new Spot(15,9,"wk"),  new Spot(15,10,"wb"), new Spot(15,11,"wb"),
+   new Spot(15,12,"wn"), new Spot(15,13,"wn"), new Spot(15,14,"wr"), new Spot(15,15,"wr"),],
+];
+
+const boardLocs = Object.fromEntries([...Array(8)].flatMap((_,i) => [...Array(8)].map((_,j) => [`${i},${j}`, [-21+6*j, -21+6*i]])));
+const doubleBoardLocs = Object.fromEntries([...Array(16)].flatMap((_,i) => [...Array(16)].map((_,j) => [`${i},${j}`, [-45+6*j, -45+6*i]])));
 const gridSquareSize = 6;
 
 const opp = {
@@ -971,6 +1704,8 @@ function leaveMatchMenu() {
   matchMenuDiv.style.display = "none";
   ingameMenuDiv.style.display = "flex";
   board = decodeBoard(defaultBoard);
+  gm = ("standard")
+  switchBoard("standard-board");
   updateBoardMeshes();
 }
 
@@ -979,6 +1714,8 @@ function leaveLocalMatch() {
   mainMenuDiv.style.display = "flex";
   prevBoard = copy2DArray(board);
   board = decodeBoard(defaultBoard);
+  gm = ("standard")
+  switchBoard("standard-board");
   updateBoardMeshes();
   startSpin();
 }
@@ -1195,11 +1932,22 @@ function createMatch() {
   initChat();
   var selectElement = document.getElementById('gameModeSelect');
   gm = selectElement.options[selectElement.selectedIndex].value;
-  console.log(gm);
-  if (gm == "queen attack") {
-    console.log(queenAttackBoard)
-    board = decodeBoard(queenAttackBoard);
+  switch (gm) {
+    case "standard":
+      switchBoard("standard-board");
+      break;
+    case "queen attack":
+      switchBoard("standard-board");
+      break;
+    case "lava bridge":
+      switchBoard("lava-chess");
+      break;
+    case "double":
+      switchBoard("double-board");
+      break;
   }
+  createPlanes();
+  console.log(gm);
   updateGameBoardDatabase();
   goToMatchMenu();
 }
@@ -1216,10 +1964,25 @@ function joinMatch(teamRequest="b") {
       setupMatchRefListener();
       initChat();
       goToMatchMenu();
+      var selectElement = document.getElementById('gameModeSelect');
+      gm = selectElement.options[selectElement.selectedIndex].value;
+      if (gm == "standard"){
+        switchBoard("standard-board");
+      } else if (gm == "queen attack") {
+        switchBoard("standard-board");
+      } else if (gm == "lava bridge") {
+        switchBoard("lava-chess");
+      } else if (gm == "double") {
+        switchBoard("double-board");
+      }
       
       prevBoard = copy2DArray(board);
       get(ref(dr, matchRef)).then((snapshot) => {
-        board = decodeBoard(snapshot.val());
+        if (gm == "double") {
+          board2 = decodeBoard(snapshot.val());
+        } else {
+          board = decodeBoard(snapshot.val());
+        }
       }).catch((error) => {
         console.error(error);
       });
@@ -1248,6 +2011,7 @@ goToMainMenu();
 function gameOver(winner) {
   prevBoard = copy2DArray(board);
   board = decodeBoard(defaultBoard);
+  board2 = decodeBoard(defaultBoard2);
   turn = "w";
   updateBoardMeshes();
   updateGameBoardDatabase();
@@ -1322,25 +2086,49 @@ camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 function goToTeamCamera(team) {
   stopSpin();
-  if (team == "w") {
-    camera.position.z = 30;
-    camera.position.y = 30;
-    if (mode == "online") {
-      camera.position.x = -5;
-      camera.lookAt(new THREE.Vector3(-5, 0, 0));
+  if (gm == "double") {
+    if (team == "w") {
+      camera.position.z = 60;
+      camera.position.y = 60;
+      if (mode == "online") {
+        camera.position.x = -10;
+        camera.lookAt(new THREE.Vector3(-10, 0, 0));
+      } else {
+        camera.position.x = -10;
+        camera.lookAt(new THREE.Vector3(-10, 0, 0));
+      }
     } else {
-      camera.position.x = -5;
-      camera.lookAt(new THREE.Vector3(-5, 0, 0));
+      camera.position.z = -60;
+      camera.position.y = 60;
+      if (mode == "online") {
+        camera.position.x = 10;
+        camera.lookAt(new THREE.Vector3(10, 0, 0));
+      } else {
+        camera.position.x = 10;
+        camera.lookAt(new THREE.Vector3(10, 0, 0));
+      }
     }
   } else {
-    camera.position.z = -30;
-    camera.position.y = 30;
-    if (mode == "online") {
-      camera.position.x = 5;
-      camera.lookAt(new THREE.Vector3(5, 0, 0));
+    if (team == "w") {
+      camera.position.z = 30;
+      camera.position.y = 30;
+      if (mode == "online") {
+        camera.position.x = -5;
+        camera.lookAt(new THREE.Vector3(-5, 0, 0));
+      } else {
+        camera.position.x = -5;
+        camera.lookAt(new THREE.Vector3(-5, 0, 0));
+      }
     } else {
-      camera.position.x = 5;
-      camera.lookAt(new THREE.Vector3(5, 0, 0));
+      camera.position.z = -30;
+      camera.position.y = 30;
+      if (mode == "online") {
+        camera.position.x = 5;
+        camera.lookAt(new THREE.Vector3(5, 0, 0));
+      } else {
+        camera.position.x = 5;
+        camera.lookAt(new THREE.Vector3(5, 0, 0));
+      }
     }
   }
 }
@@ -1381,53 +2169,109 @@ const pieceModels = {
 function updateBoardMeshes(op="") {
 
   resetPlanes();
-  if (op == "gameOver") {
-    prevBoard = copy2DArray(board);
-  }
-  kingLoc = findKing(team);
-  oppKingLoc = findKing(opp[team]);
-  if (board[kingLoc[0]][kingLoc[1]].isCheck()) {
-    inCheckLoc = [kingLoc[0], kingLoc[1]];
-    inCheck = true;
-    highlightPlane(kingLoc[0], kingLoc[1], "red");
-    if (board[kingLoc[0]][kingLoc[1]].findMoves().length === 0) {
-      gameOver(opp[team]);
+
+  if (gm == "double") {
+    if (op == "gameOver") {
+      prevBoard2 = copy2DArray(board2);
+    }
+    kingLoc = findKing(team);
+    oppKingLoc = findKing(opp[team]);
+    if (board2[kingLoc[0]][kingLoc[1]].isCheck()) {
+      inCheckLoc = [kingLoc[0], kingLoc[1]];
+      inCheck = true;
+      highlightPlane(kingLoc[0], kingLoc[1], "red");
+      if (board2[kingLoc[0]][kingLoc[1]].findMoves().length === 0) {
+        gameOver(opp[team]);
+      }
+    } else {
+      inCheck = false;
     }
   } else {
-    inCheck = false;
+    if (op == "gameOver") {
+      prevBoard = copy2DArray(board);
+    }
+    kingLoc = findKing(team);
+    oppKingLoc = findKing(opp[team]);
+    if (board[kingLoc[0]][kingLoc[1]].isCheck()) {
+      inCheckLoc = [kingLoc[0], kingLoc[1]];
+      inCheck = true;
+      highlightPlane(kingLoc[0], kingLoc[1], "red");
+      if (board[kingLoc[0]][kingLoc[1]].findMoves().length === 0) {
+        gameOver(opp[team]);
+      }
+    } else {
+      inCheck = false;
+    }
   }
 
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      for (let i = 0; i < meshes.length; i++) {
-        if (meshes[i].r == r && meshes[i].c == c && board[r][c].id != meshes[i].piece) {
-          meshes[i].removePiece();
-          meshes.splice(i, 1);
+  if (gm == "double") {
+    for (let r = 0; r < 16; r++) {
+      for (let c = 0; c < 16; c++) {
+        for (let i = 0; i < meshes.length; i++) {
+          if (meshes[i].r == r && meshes[i].c == c && board2[r][c].id != meshes[i].piece) {
+            meshes[i].removePiece();
+            meshes.splice(i, 1);
+          }
         }
       }
     }
-  }
 
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      if (prevBoard[r][c].id != board[r][c].id) {
-        const pieceKey = board[r][c].team + board[r][c].piece;
-        const modelPath = pieceModels[pieceKey];       
-          if(pieceKey == "-=") {
-          break;
+    for (let r = 0; r < 16; r++) {
+      for (let c = 0; c < 16; c++) {
+        if (prevBoard2[r][c].id != board2[r][c].id) {
+          const pieceKey = board2[r][c].team + board2[r][c].piece;
+          const modelPath = pieceModels[pieceKey];       
+            if(pieceKey == "-=") {
+            break;
+          }
+          gltfLoader.load(modelPath, function(gltf) {
+            const model = gltf.scene;
+            const scaleFactor = 0.5;
+            model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            model.position.set((c - 7.5) * gridSquareSize, 1.25, (r - 7.5) * gridSquareSize);
+            model.userData.index = { r, c };
+            const piece = new piece3d(r, c, model, pieceKey);
+            meshes.push(piece);
+            scene.add(model);
+          }, undefined, function(error) {
+            console.error(error);
+          });
         }
-        gltfLoader.load(modelPath, function(gltf) {
-          const model = gltf.scene;
-          const scaleFactor = 0.5;
-          model.scale.set(scaleFactor, scaleFactor, scaleFactor);
-          model.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
-          model.userData.index = { r, c };
-          const piece = new piece3d(r, c, model, pieceKey);
-          meshes.push(piece);
-          scene.add(model);
-        }, undefined, function(error) {
-          console.error(error);
-        });
+      }
+    }
+  } else {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        for (let i = 0; i < meshes.length; i++) {
+          if (meshes[i].r == r && meshes[i].c == c && board[r][c].id != meshes[i].piece) {
+            meshes[i].removePiece();
+            meshes.splice(i, 1);
+          }
+        }
+      }
+    }
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        if (prevBoard[r][c].id != board[r][c].id) {
+          const pieceKey = board[r][c].team + board[r][c].piece;
+          const modelPath = pieceModels[pieceKey];       
+            if(pieceKey == "-=") {
+            break;
+          }
+          gltfLoader.load(modelPath, function(gltf) {
+            const model = gltf.scene;
+            const scaleFactor = 0.5;
+            model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            model.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
+            model.userData.index = { r, c };
+            const piece = new piece3d(r, c, model, pieceKey);
+            meshes.push(piece);
+            scene.add(model);
+          }, undefined, function(error) {
+            console.error(error);
+          });
+        }
       }
     }
   }
@@ -1451,15 +2295,30 @@ function highlightPlane(r,c,color="yellow") {
 }
 
 function resetPlanes() {
-  for (let i = 0; i < 8;i++) {
-    for (let j = 0; j < 8; j++) {
-      if (board[i][j].isCheck() && board[i][j].piece == "k") {
-        highlightPlane(i,j,"red")
+  if (gm == "double") {
+    for (let i = 0; i < 16;i++) {
+      for (let j = 0; j < 16; j++) {
+        if (board2[i][j].isCheck() && board2[i][j].piece == "k") {
+          highlightPlane(i,j,"red")
+        }
+        else if (planesArray[i][j].userData.defaultColor == "b") {
+          planesArray[i][j].material.color.set(0x000000);
+        } else {
+          planesArray[i][j].material.color.set(0xffffff);
+        }
       }
-      else if (planesArray[i][j].userData.defaultColor == "b") {
-        planesArray[i][j].material.color.set(0x000000);
-      } else {
-        planesArray[i][j].material.color.set(0xffffff);
+    }
+  } else {
+    for (let i = 0; i < 8;i++) {
+      for (let j = 0; j < 8; j++) {
+        if (board[i][j].isCheck() && board[i][j].piece == "k") {
+          highlightPlane(i,j,"red")
+        }
+        else if (planesArray[i][j].userData.defaultColor == "b") {
+          planesArray[i][j].material.color.set(0x000000);
+        } else {
+          planesArray[i][j].material.color.set(0xffffff);
+        }
       }
     }
   }
@@ -1488,28 +2347,53 @@ function onCanvasClick(event) {
       prevClickedMesh = targetObject;
       /* ------------------------------------------------------------ game logic ----------------------------------------------------------------------*/
       if (state == "unselected") {
-        if ((board[r][c].team == team && turn == team)) {
-          if (board[r][c].team != "-") {
-            resetPlanes();
-            availableMoves = board[r][c].findMoves();
-            highlightMoves(availableMoves);
-            rSelected = r;
-            cSelected = c;
-            state = "selected";
+        if (gm == "double") {
+          if ((board2[r][c].team == team && turn == team)) {
+            if (board2[r][c].team != "-") {
+              resetPlanes();
+              availableMoves = board2[r][c].findMoves();
+              highlightMoves(availableMoves);
+              rSelected = r;
+              cSelected = c;
+              state = "selected";
+            }
+          }
+        } else {
+          if ((board[r][c].team == team && turn == team)) {
+            if (board[r][c].team != "-") {
+              resetPlanes();
+              availableMoves = board[r][c].findMoves();
+              console.log(availableMoves)
+              highlightMoves(availableMoves);
+              rSelected = r;
+              cSelected = c;
+            }
           }
         }
       } else if (state == "selected") {
         for (let i = 0; i < availableMoves.length; i++) {
           if (availableMoves[i][0] == r && availableMoves[i][1] == c) {
-            prevBoard = copy2DArray(board);
-            if (board[rSelected][cSelected].id == "wp" && r == 0) {
-              board[r][c] = new Spot(r, c, "wq");
-            } else if (board[rSelected][cSelected].id == "bp" && r == 7) {
-              board[r][c] = new Spot(r, c, "bq");
+            if (gm == "double") {
+              prevBoard2 = copy2DArray(board2);
+              if (board[rSelected][cSelected].id == "wp" && r == 0) {
+                board2[r][c] = new Spot(r, c, "wq");
+              } else if (board[rSelected][cSelected].id == "bp" && ((gm != "double" && r == 7) || (gm == "double" && r == 15))) {
+                board2[r][c] = new Spot(r, c, "bq");
+              } else {
+                board2[r][c] = new Spot(r, c, board2[rSelected][cSelected].id);
+              }
+              board[rSelected][cSelected] = new Spot(rSelected, cSelected, "-=");
             } else {
-              board[r][c] = new Spot(r, c, board[rSelected][cSelected].id);
+              prevBoard = copy2DArray(board);
+              if (board[rSelected][cSelected].id == "wp" && r == 0) {
+                board[r][c] = new Spot(r, c, "wq");
+              } else if (board[rSelected][cSelected].id == "bp" && ((gm != "double" && r == 7) || (gm == "double" && r == 15))) {
+                board[r][c] = new Spot(r, c, "bq");
+              } else {
+                board[r][c] = new Spot(r, c, board[rSelected][cSelected].id);
+              }
+              board[rSelected][cSelected] = new Spot(rSelected, cSelected, "-=");
             }
-            board[rSelected][cSelected] = new Spot(rSelected, cSelected, "-=");
             scene.remove();
             log_board();
             encodedBoard = encodeBoard();
@@ -1536,53 +2420,78 @@ function onCanvasClick(event) {
 }
 
 // creating planes that go on top of game board
-var planesArray = Array(8).fill().map(() => Array(8).fill(null));
-var altCounter = 1;
-var rayPlaneColor = 0xffffff;
-for(let r = 0; r < 8; r++) {
-  let row = [];
-  altCounter *= -1;
-  for(let c = 0; c < 8; c++) {
-    if (altCounter == -1) {
-      rayPlaneColor = 0x000000; 
-    } else {
-      rayPlaneColor = 0xffffff;
+var planesArray = Array(16).fill().map(() => Array(16).fill(null));;
+function createPlanes() {
+  for (var planes of planesArray) {
+    scene.remove(planes);
+  }
+  if (gm == "double") {
+    var altCounter = 1;
+    var rayPlaneColor = 0xffffff;
+    for(let r = 0; r < 16; r++) {
+      let row = [];
+      altCounter *= -1;
+      for(let c = 0; c < 16; c++) {
+        if (altCounter == -1) {
+          rayPlaneColor = 0x000000; 
+        } else {
+          rayPlaneColor = 0xffffff;
+        }
+        let planeGeometry = new THREE.PlaneGeometry(gridSquareSize, gridSquareSize);
+        let planeMaterial = new THREE.MeshBasicMaterial({color: rayPlaneColor});
+        let planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+        if (altCounter == -1) {
+          planeMesh.userData.defaultColor = "b";
+        } else {
+          planeMesh.userData.defaultColor = "w";
+        }
+        planeMesh.rotation.x = degToRad(-90);
+        planeMesh.position.set((c - 7.5) * gridSquareSize, 1.25, (r - 7.5) * gridSquareSize);
+        planeMesh.userData.index = { r, c };
+        renderer.domElement.addEventListener('click', onCanvasClick);
+        scene.add(planeMesh);
+        altCounter *= -1;
+        planesArray[r][c] = planeMesh;
+      }
     }
-    let planeGeometry = new THREE.PlaneGeometry(gridSquareSize, gridSquareSize);
-    let planeMaterial = new THREE.MeshBasicMaterial({color: rayPlaneColor});
-    let planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-    if (altCounter == -1) {
-      planeMesh.userData.defaultColor = "b";
-    } else {
-      planeMesh.userData.defaultColor = "w";
+  } else {
+    var altCounter = 1;
+    var rayPlaneColor = 0xffffff;
+    for(let r = 0; r < 8; r++) {
+      let row = [];
+      altCounter *= -1;
+      for(let c = 0; c < 8; c++) {
+        if (altCounter == -1) {
+          rayPlaneColor = 0x000000; 
+        } else {
+          rayPlaneColor = 0xffffff;
+        }
+        let planeGeometry = new THREE.PlaneGeometry(gridSquareSize, gridSquareSize);
+        let planeMaterial = new THREE.MeshBasicMaterial({color: rayPlaneColor});
+        let planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+        if (altCounter == -1) {
+          planeMesh.userData.defaultColor = "b";
+        } else {
+          planeMesh.userData.defaultColor = "w";
+        }
+        planeMesh.rotation.x = degToRad(-90);
+        planeMesh.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
+        planeMesh.userData.index = { r, c };
+        renderer.domElement.addEventListener('click', onCanvasClick);
+        scene.add(planeMesh);
+        altCounter *= -1;
+        planesArray[r][c] = planeMesh;
+      }
     }
-    planeMesh.rotation.x = degToRad(-90);
-    planeMesh.position.set((c - 3.5) * gridSquareSize, 1.25, (r - 3.5) * gridSquareSize);
-    planeMesh.userData.index = { r, c };
-    renderer.domElement.addEventListener('click', onCanvasClick);
-    scene.add(planeMesh);
-    altCounter *= -1;
-    planesArray[r][c] = planeMesh;
   }
 }
+createPlanes()
 
 // ambient scene light
 /*
 const ambientLight = new THREE.AmbientLight(0xffffff)
 scene.add(ambientLight);
 */
-
-// directional light
-function addPointLight(color, intensity, distance, position) {
-  const pointLight = new THREE.PointLight(color, intensity, distance);
-  pointLight.position.set(position.x, position.y, position.z);
-  scene.add(pointLight);
-}
-
-addPointLight(0xffffff, 3, 80, new THREE.Vector3(30, 25, 0));
-addPointLight(0xffffff, 3, 80, new THREE.Vector3(-30, 25, 0));
-addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, 30));
-addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, -30));
 
 function rgbToHex(r, g, b) {
   var redHex = r.toString(16).padStart(2, '0');
@@ -1615,6 +2524,8 @@ scene.background = background_texture;
 window.addEventListener('keydown', function(event) {
   if (event.key === 'q') {
     console.log(encodeBoard());
+  } else if (event.key === 't') {
+    console.log(`turn: ${turn} | team: ${team}`);
   }
   if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
     return;
@@ -1639,13 +2550,56 @@ window.addEventListener('keydown', function(event) {
 
 
 // chess board
-gltfLoader.load("chess_board/lava-chess.gltf", function(gltf) {
-  const model = gltf.scene;
+var model;
+var pointLights = [];
+gltfLoader.load("chess_board/standard-board.gltf", function(gltf) {
+  model = gltf.scene;
   scene.add(model);
   model.position.set(0,0,0)
 }, undefined, function(error) {
   console.error(error);
 });
+addPointLight(0xffffff, 3, 80, new THREE.Vector3(30, 25, 0));
+addPointLight(0xffffff, 3, 80, new THREE.Vector3(-30, 25, 0));
+addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, 30));
+addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, -30));
+
+function switchBoard(name) {
+  scene.remove(model);
+  clearPointLights();
+  gltfLoader.load(`chess_board/${name}.gltf`, function(gltf) {
+    model = gltf.scene;
+    scene.add(model);
+    model.position.set(0,0,0)
+  }, undefined, function(error) {
+    console.error(error);
+  });
+  if (name == "double-board") {
+    addPointLight(0xffffff, 3, 160, new THREE.Vector3(60, 25, 0));
+    addPointLight(0xffffff, 3, 160, new THREE.Vector3(-60, 25, 0));
+    addPointLight(0xffffff, 3, 160, new THREE.Vector3(0, 25, 60));
+    addPointLight(0xffffff, 3, 160, new THREE.Vector3(0, 25, -60));
+  } else {
+    addPointLight(0xffffff, 3, 80, new THREE.Vector3(30, 25, 0));
+    addPointLight(0xffffff, 3, 80, new THREE.Vector3(-30, 25, 0));
+    addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, 30));
+    addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, -30));
+  }
+}
+
+// directional light
+function addPointLight(color, intensity, distance, position) {
+  const pointLight = new THREE.PointLight(color, intensity, distance);
+  pointLight.position.set(position.x, position.y, position.z);
+  pointLights.push(pointLight);
+  scene.add(pointLight);
+}
+function clearPointLights() {
+  for (var light of pointLights) {
+    scene.remove(light);
+  }
+  pointLights = [];
+}
 
 updateBoardMeshes(decodeBoard(encodeBoard()));
 
@@ -1667,18 +2621,12 @@ function animate() {
   
   if (spin) {
 
-    /* spin around center
-    angle += 0.003;
-    camera.position.x = radius * Math.sin(angle);
-    camera.position.z = radius * Math.cos(angle);
-    camera.position.y = 20;
-    camera.lookAt(new THREE.Vector3(0, 10, 0));
-    */
-
     angle += 0.003;
     camera.lookAt(new THREE.Vector3(radius * Math.sin(angle), 10, radius * Math.cos(angle)));
 
   }
   renderer.render(scene, camera);
 }
+
+console.log(encodeBoard("double"));
 renderer.setAnimationLoop(animate);
