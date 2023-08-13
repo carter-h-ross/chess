@@ -160,6 +160,65 @@
             background-color:#80b5ea;
         }
 
+        .select {
+            position: relative;
+            display: flex;
+            margin-top: 10px;
+        }    .select select {
+                font-family: Arial;
+                font-size:15px;
+                font-weight:bold;
+                text-align: left;
+                text-decoration:none;
+                text-shadow:0px 1px 0px #528ecc;
+                display: flex;
+                width: 100%;
+                cursor: pointer;
+                padding: 7px 40px;
+                outline: 0;
+                border: 1px solid #84bbf3;
+                border-radius: 6px;
+                background:linear-gradient(to bottom, #bddbfa 5%, #80b5ea 100%);
+                background-color:#bddbfa;
+                color: #ffffff;
+                appearance: none;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+            }
+                .select select::-ms-expand {
+                    display: none;
+                    text-align: left;
+                }
+                .select select:hover,
+                .select select:focus {
+                    color: #ffffff;
+                    background:linear-gradient(to bottom, #80b5ea 5%, #bddbfa 100%);
+                    background-color:#80b5ea;
+                }
+                .select select:disabled {
+                    opacity: 0.5;
+                    pointer-events: none;
+                }
+        .select_arrow {
+            position: absolute;
+            top: 12px;
+            right: 15px;
+            pointer-events: none;
+            border-style: solid;
+            border-width: 8px 5px 0px 5px;
+            border-color: #ffffff transparent transparent transparent;
+        }
+        .select select:hover ~ .select_arrow,
+        .select select:focus ~ .select_arrow {
+            border-top-color: #ffffff;
+        }
+        .select select:disabled ~ .select_arrow {
+            border-top-color: #ffffff;
+        }
+        
+        /* Additional styles as needed */
+        
+
         /*
         .main-menu-button {
             box-shadow:inset 0px 1px 0px 0px #f1dcfb;
@@ -446,6 +505,18 @@
             <label for="opponent-username" class="opponent-input">opponent username:</label>
             <input class="main-menu-input opponent-username-input" type="text" name="opponent-username">
             <button class="main-menu-button create-game">create game</button>
+
+            <div class="select">
+                <select id="gameModeSelect">
+                    <option value="standard" selected>standard</option>
+                    <option value="queen attack">queen attack</option>
+                    <option value="lava bridge">lava bridge</option>
+                    <!--<option value="double">4x chess</option>-->
+                </select>
+                <div class="select_arrow">
+                </div>
+            </div>
+            
             <button class="main-menu-button join-game">join new game</button>
             <button class="main-menu-button resume-white">resume &#40;created&#41;</button>
             <button class="main-menu-button resume-black">resume &#40;joined&#41;</button>

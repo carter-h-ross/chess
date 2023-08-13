@@ -35,8 +35,6 @@ function encodeBoard(op="") {
   let empty = false;
 
   if (gm == "double" || op == "double") {
-    console.log("board2:")
-    console.log(board2);
     outerloop:
     for (let r = 0; r < 16; r++) {
       inerloop:
@@ -92,17 +90,16 @@ function isNumber(char) {
   return /^\d$/.test(char);
 }
 
-function decodeBoard(code) {
+function decodeBoard(code,keepTurn = false) {
 
   let result;
   if (gm == "double") {
     result = Array(16).fill().map(() => Array(16).fill(null));
     let r = 0;
     let c = 0;
-    console.log(code[0])
-    console.log(code)
-    turn = code[0];
-    let i = 1;
+    if (!(keepTurn)) {
+      turn = code[0];
+    };
     while (i < code.length) {
       let ch = code[i];
       if (isNumber(ch)) {
@@ -139,9 +136,11 @@ function decodeBoard(code) {
     result = Array(8).fill().map(() => Array(8).fill(null));
     let r = 0;
     let c = 0;
-    console.log(code[0])
-    console.log(code)
-    turn = code[0];
+    if (!(keepTurn)) {
+      turn = code[0];
+    } else {
+      turn = " w";
+    }
     let i = 1;
     while (i < code.length) {
       let ch = code[i];
@@ -249,7 +248,7 @@ class Spot {
     let r = this.r;
     let c = this.c;
 
-    if (gm == "standard" || gm == "queen attack" || gm == "lava chess") {
+    if (gm == "standard" || gm == "queen attack" || gm == "lava bridge") {
       // checks if black pawn will make check
       if (team == "w") {
         if (r > 0 && c < 7) {
@@ -573,7 +572,6 @@ class Spot {
     let moves = [];
     let piece = this.piece;
     let id = this.id;
-    console.log(`mode: ${m}`)
 
     if (gm == "standard" || gm == "queen attack" || gm == "lava bridge") {
       // checks for moves king can make
@@ -1904,7 +1902,11 @@ const setupMatchRefListener = () => {
         }
         const boardData = snapshot.val();
         if (boardData != null) {
-          board = decodeBoard(boardData);
+          if (gm == "double") {
+            board2 = decodeBoard(boardData);
+          } else {
+            board = decodeBoard(boardData);
+          }
           updateBoardMeshes();
         }
       } else {
@@ -1938,6 +1940,8 @@ function createMatch() {
       break;
     case "queen attack":
       switchBoard("standard-board");
+      board = decodeBoard(queenAttackBoard)
+      updateGameBoardDatabase();
       break;
     case "lava bridge":
       switchBoard("lava-chess");
@@ -1947,7 +1951,6 @@ function createMatch() {
       break;
   }
   createPlanes();
-  console.log(gm);
   updateGameBoardDatabase();
   goToMatchMenu();
 }
@@ -1961,26 +1964,33 @@ function joinMatch(teamRequest="b") {
     if (!(snapshot.exists())) {
       document.querySelector(".opponent-username-input").value = "game not created";
     } else {
-      setupMatchRefListener();
       initChat();
       goToMatchMenu();
       var selectElement = document.getElementById('gameModeSelect');
       gm = selectElement.options[selectElement.selectedIndex].value;
-      if (gm == "standard"){
-        switchBoard("standard-board");
-      } else if (gm == "queen attack") {
-        switchBoard("standard-board");
-      } else if (gm == "lava bridge") {
-        switchBoard("lava-chess");
-      } else if (gm == "double") {
-        switchBoard("double-board");
+      switch (gm) {
+        case "standard":
+          switchBoard("standard-board");
+          break;
+        case "queen attack":
+          switchBoard("standard-board");
+          break;
+        case "lava bridge":
+          switchBoard("lava-chess");
+          break;
+        case "double":
+          switchBoard("double-board");
+          break;
       }
-      
-      prevBoard = copy2DArray(board);
+      createPlanes();
+
+      setupMatchRefListener();
       get(ref(dr, matchRef)).then((snapshot) => {
         if (gm == "double") {
+          prevBoard2 = copy2DArray(board2);
           board2 = decodeBoard(snapshot.val());
         } else {
+          prevBoard = copy2DArray(board);
           board = decodeBoard(snapshot.val());
         }
       }).catch((error) => {
@@ -2010,8 +2020,13 @@ goToMainMenu();
 
 function gameOver(winner) {
   prevBoard = copy2DArray(board);
-  board = decodeBoard(defaultBoard);
-  board2 = decodeBoard(defaultBoard2);
+  if (gm == "double") {
+    board2 = decodeBoard(defaultBoard2);
+  } else if (gm == "queen attack") {
+    board = decodeBoard(queenAttackBoard, true);
+  } else {
+    board = decodeBoard(defaultBoard);
+  }
   turn = "w";
   updateBoardMeshes();
   updateGameBoardDatabase();
@@ -2363,10 +2378,10 @@ function onCanvasClick(event) {
             if (board[r][c].team != "-") {
               resetPlanes();
               availableMoves = board[r][c].findMoves();
-              console.log(availableMoves)
               highlightMoves(availableMoves);
               rSelected = r;
               cSelected = c;
+              state = "selected";
             }
           }
         }
@@ -2375,19 +2390,19 @@ function onCanvasClick(event) {
           if (availableMoves[i][0] == r && availableMoves[i][1] == c) {
             if (gm == "double") {
               prevBoard2 = copy2DArray(board2);
-              if (board[rSelected][cSelected].id == "wp" && r == 0) {
+              if (board2[rSelected][cSelected].id == "wp" && r == 0) {
                 board2[r][c] = new Spot(r, c, "wq");
-              } else if (board[rSelected][cSelected].id == "bp" && ((gm != "double" && r == 7) || (gm == "double" && r == 15))) {
+              } else if (board2[rSelected][cSelected].id == "bp" && r == 15) {
                 board2[r][c] = new Spot(r, c, "bq");
               } else {
                 board2[r][c] = new Spot(r, c, board2[rSelected][cSelected].id);
               }
-              board[rSelected][cSelected] = new Spot(rSelected, cSelected, "-=");
+              board2[rSelected][cSelected] = new Spot(rSelected, cSelected, "-=");
             } else {
               prevBoard = copy2DArray(board);
               if (board[rSelected][cSelected].id == "wp" && r == 0) {
                 board[r][c] = new Spot(r, c, "wq");
-              } else if (board[rSelected][cSelected].id == "bp" && ((gm != "double" && r == 7) || (gm == "double" && r == 15))) {
+              } else if (board[rSelected][cSelected].id == "bp" && r == 7) {
                 board[r][c] = new Spot(r, c, "bq");
               } else {
                 board[r][c] = new Spot(r, c, board[rSelected][cSelected].id);
@@ -2422,8 +2437,12 @@ function onCanvasClick(event) {
 // creating planes that go on top of game board
 var planesArray = Array(16).fill().map(() => Array(16).fill(null));;
 function createPlanes() {
-  for (var planes of planesArray) {
-    scene.remove(planes);
+  for (let row of planesArray) {
+    for (let plane of row) {
+        if (plane) {
+            scene.remove(plane);
+        }
+    }
   }
   if (gm == "double") {
     var altCounter = 1;
@@ -2526,9 +2545,12 @@ window.addEventListener('keydown', function(event) {
     console.log(encodeBoard());
   } else if (event.key === 't') {
     console.log(`turn: ${turn} | team: ${team}`);
-  }
-  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
-    return;
+  } else if (event.key == 'b') {
+    console.log("board:");
+    console.log(board);
+  } else if (event.key == 'v') {
+    console.log("board2:");
+    console.log(board2);
   }
   switch (event.key) {
     case 'ArrowUp':
@@ -2628,5 +2650,4 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-console.log(encodeBoard("double"));
 renderer.setAnimationLoop(animate);
