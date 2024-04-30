@@ -10,6 +10,7 @@ function degToRad(degrees) {
   return radians;
 }
 
+// function that is used to help me see the state the board should be displayed in in if done correctly
 function log_board(){
   let result = ``;
   for (let r = 0; r < 8; r++) {
@@ -24,6 +25,7 @@ function log_board(){
   }
 }
 
+// takes the state of the board and encodes it into a string to be stored in the database
 function encodeBoard(op="") {
   let result = "";
   if (op == "w") {
@@ -86,10 +88,12 @@ function encodeBoard(op="") {
   return result;
 }
 
+// function to check if a charachter is a number
 function isNumber(char) {
   return /^\d$/.test(char);
 }
 
+// function that takes a code and decodes that board into an array that can be used to update the display of the chess board
 function decodeBoard(code,keepTurn = false) {
 
   let result;
@@ -175,6 +179,7 @@ function decodeBoard(code,keepTurn = false) {
   return result;
 }
 
+// debug function used to help me find the available moves
 function debug_board(moves) {
   let result = "";
   for (let r = 0; r < 8; r++) {
@@ -192,6 +197,7 @@ function debug_board(moves) {
   }
 }
 
+// finds the location of the king for a specified team
 function findKing(team) {
 
   if (gm == "double") {
@@ -1206,15 +1212,19 @@ class Spot {
   } // end of moves
 }
 
+// the code value for the default board shown in the main menu when it is a double sized board
 const defaultBoard2 = 
   `wbrbrbnbnbbbbbqbqbkbqbbbbbnbnbrbrbrbrbnbnbbbbbqbqbqbqbbbbbnbnbrbrbp
   bpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbpbp
   bpbp128wpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpwpw
   pwpwpwrwrwnwnwbwbwqwqwqwbwbwnwnwrwrwrwrwnwnwbwbwqwqwqwkwbwbwnwnwrwr`;
 
+// the code value for the default board for the regular mode
 const defaultBoard = "wbrbnbbbqbkbbbnbrbpbpbpbpbpbpbpbp32wpwpwpwpwpwpwpwpwrwnwbwqwkwbwnwr";
+// the code value for the default board for the queeen attack mode mode
 const queenAttackBoard = "wbqbqbqbqbkbqbqbqbpbpbpbpbpbpbpbp32wpwpwpwpwpwpwpwpwqwqwqwqwkwqwqwq";
 
+// used to store the state of the board and display the pieces
 var board = [
   // row 0
   [new Spot(0,0,"br"), new Spot(0,1,"bn"), new Spot(0,2,"bb"), new Spot(0,3,"bq"),
@@ -1242,6 +1252,7 @@ var board = [
    new Spot(7,4,"wk"), new Spot(7,5,"wb"), new Spot(7,6,"wn"), new Spot(7,7,"wr"),],
 ];
 
+// gets an array for the next board if one piece was moved to another spot
 function getNextBoard(r1,c1,r2,c2) {
   let result;
   if (gm == "double") {
@@ -1254,10 +1265,12 @@ function getNextBoard(r1,c1,r2,c2) {
   return result;
 }
 
+// creates a copy of a 2d array without it refrencing the same spot in memory
 function copy2DArray(array) {
   return array.map(innerArray => innerArray.slice());
 }
 
+// array use to see the state of the board wit the next move
 var nextBoard = [
   // row 0
   [new Spot(0,0,"br"), new Spot(0,1,"bn"), new Spot(0,2,"bb"), new Spot(0,3,"bq"),
@@ -1285,6 +1298,7 @@ var nextBoard = [
    new Spot(7,4,"wk"), new Spot(7,5,"wb"), new Spot(7,6,"wn"), new Spot(7,7,"wr"),],
 ];
 
+// array used to store the state of the board from the previous move
 var prevBoard = [
   // row 0
   [new Spot(0,0,"-="), new Spot(0,1,"-="), new Spot(0,2,"-="), new Spot(0,3,"-="),
@@ -1314,6 +1328,7 @@ var prevBoard = [
 
 
 //----------------------------------------------------------- double boards ----------------------------------------------------------------
+// array used to store the state of the board from the previous move in double size mode
 var prevBoard2 = [
   // row 0
   [new Spot(0,0,"-="),  new Spot(0,1,"-="),  new Spot(0,2,"-="),  new Spot(0,3,"-="),
@@ -1397,6 +1412,7 @@ var prevBoard2 = [
    new Spot(15,12,"-="), new Spot(15,13,"-="), new Spot(15,14,"-="), new Spot(15,15,"-="),],
 ];
 
+// used to store the state of the board and display the pieces in double size mode
 var board2 = [
   // row 0
   [new Spot(0,0,"br"),  new Spot(0,1,"br"),  new Spot(0,2,"bn"),  new Spot(0,3,"bn"),
@@ -1480,6 +1496,7 @@ var board2 = [
    new Spot(15,12,"wn"), new Spot(15,13,"wn"), new Spot(15,14,"wr"), new Spot(15,15,"wr"),],
 ];
 
+// array use to see the state of the board wit the next move in double size mode
 var nextBoard2 = [
   // row 0
   [new Spot(0,0,"br"),  new Spot(0,1,"br"),  new Spot(0,2,"bn"),  new Spot(0,3,"bn"),
@@ -1633,6 +1650,8 @@ const analytics = getAnalytics(app);
 const df = getFirestore(app);
 const colRef = collection(df, "leaderboard")
 var users = {};
+
+// function used to get leaderboard data
 function getLeaderboardFromFirestore() {
   getDocs(colRef)
     .then((snapshot) => {
@@ -1683,21 +1702,25 @@ function goToMainMenu() {
   localMatchMenuDiv.style.display = "none";
 }
 
+// load menu after loggng in
 function goToIngameMenu() {
   mainMenuDiv.style.display = "none";
   ingameMenuDiv.style.display = "flex";
 }
 
+// go to game menu after creating or joining game
 function goToMatchMenu() {
   matchMenuDiv.style.display = "flex";
   ingameMenuDiv.style.display = "none";
 }
 
+// go to menu after creating local match
 function goToLocalMatchMenu() {
   localMatchMenuDiv.style.display = "flex";
   ingameMenuDiv.style.display = "none";
 }
 
+// going back to the main screen
 function leaveMatchMenu() {
   matchMenuDiv.style.display = "none";
   ingameMenuDiv.style.display = "flex";
@@ -1707,6 +1730,7 @@ function leaveMatchMenu() {
   updateBoardMeshes();
 }
 
+// going back to the main screen
 function leaveLocalMatch() {
   localMatchMenuDiv.style.display = "none";
   mainMenuDiv.style.display = "flex";
@@ -1721,7 +1745,8 @@ function leaveLocalMatch() {
 var email;
 // sign up and login
 const signupForm = document.querySelector('.signup-login')
-signupForm.addEventListener('submit', (e) => {
+// used to sign in to database with email and password
+signupForm.addEventListener('submit', (e) => { 
   e.preventDefault()
 
   email = signupForm.email.value
@@ -1762,6 +1787,7 @@ logoutButton.addEventListener('click', () => {
     })
 })
 
+// checks if the user is an admin
 function admin () {
   if (username == "admin" && email == "admin@carterross.dev") {
     return true;
@@ -1769,6 +1795,7 @@ function admin () {
   return false;
 }
 
+// adding functionality to login button
 const loginForm = document.querySelector('.signup-login')
 loginForm.addEventListener('submit', (e) => {
   e.preventDefault()
@@ -1818,12 +1845,14 @@ joinMatchButton.addEventListener("click", (e) => {
   joinMatch("b");
 });
 
+// create a new online match
 const createMatchButton = document.querySelector(".create-game");
 createMatchButton.addEventListener("click", (e) => {
   e.preventDefault();
   createMatch();
 });
 
+// leave online match
 const leaveMatchButton = document.querySelector(".leave-game");
 leaveMatchButton.addEventListener("click", (e) => {
   e.preventDefault();
@@ -1831,18 +1860,21 @@ leaveMatchButton.addEventListener("click", (e) => {
   leaveMatch();
 });
 
+// leaving local match 
 const leaveLocalMatchButton = document.querySelector(".leave-local");
 leaveLocalMatchButton.addEventListener("click", (e) => {
   e.preventDefault();
   leaveLocalMatch();
 });
 
+// resume an already created online game
 const resumeAsWhiteButton = document.querySelector(".resume-white");
 resumeAsWhiteButton.addEventListener("click", (e) => {
   e.preventDefault();
   joinMatch("w");
 });
 
+// resume an already created online game
 const resumeAsBlackButton = document.querySelector(".resume-black");
 resumeAsBlackButton.addEventListener("click", (e) => {
   e.preventDefault();
@@ -1862,12 +1894,15 @@ controlElement.addEventListener('click', function() {
     }
 });
 
+// fills users data if they chose to save email and password
+// sored on the users computer not database for security reasons
 if (localStorage.getItem("savedEmail") != null && localStorage.getItem("savedPassword") != null && localStorage.getItem("savedUsername") != null) {
   document.querySelector(".email-input").value = localStorage.getItem("savedEmail");
   document.querySelector(".password-input").value = localStorage.getItem("savedPassword");
   document.querySelector(".username-input").value = localStorage.getItem("savedUsername");
 }
 
+// getting the path to the match data in the database
 function getMatchRef() {
   if (team == "w") {
     return `games/${username}-${opponentName}`;
@@ -1878,6 +1913,7 @@ function getMatchRef() {
 
 var matchRef = `games/${username}-${opponentName}`;
 
+// updating the data for the game in the database
 function updateGameBoardDatabase() {
   const matchRef = getMatchRef();
   const boardRef = ref(dr, `${matchRef}/board`);
@@ -1917,6 +1953,7 @@ const setupMatchRefListener = () => {
   }
 };
 
+// deletes the data for the game in the database
 const removeMatchRefListener = () => {
   if (matchRef && isMatchRefInitialized) {
     off(matchRef);
@@ -1955,6 +1992,7 @@ function createMatch() {
   goToMatchMenu();
 }
 
+// joining an online match
 function joinMatch(teamRequest="b") {
   opponentName = document.querySelector(".opponent-username-input").value;
   team = teamRequest;
@@ -2004,6 +2042,7 @@ function joinMatch(teamRequest="b") {
   });
 }
 
+// leaving online match
 function leaveMatch() {
   leaveMatchMenu();
   isMatchRefInitialized = false;
@@ -2018,6 +2057,7 @@ const unsubAuth = onAuthStateChanged(auth, (user) => {
 
 goToMainMenu();
 
+// dispalys the winner of the game when checkmate is achived
 function gameOver(winner) {
   prevBoard = copy2DArray(board);
   if (gm == "double") {
@@ -2044,6 +2084,7 @@ async function sendChatMessage(message, username, gameID) {
   await set(ref(dr, `${gameID}/chat/${chatID}`), chatData);
 }
 
+// checks if a new message has been sen in the databse
 function listenForNewMessages(gameID, callback) {
   const chatRef = ref(dr, `${gameID}/chat`);
   onValue(chatRef, (snapshot) => {
@@ -2052,6 +2093,7 @@ function listenForNewMessages(gameID, callback) {
   });
 }
 
+// load chat functionality
 function initChat() {
   listenForNewMessages(getMatchRef(), (messages) => {
     const chatMessages = document.getElementById("chatMessages");
@@ -2099,6 +2141,7 @@ camera.position.y = 30;
 camera.position.x = 20;
 camera.lookAt(new THREE.Vector3(0, 0, 0));
 
+// sets the player camera to right spot base on the team they are
 function goToTeamCamera(team) {
   stopSpin();
   if (gm == "double") {
@@ -2164,7 +2207,7 @@ class piece3d {
   }
 }
 
-//board pieces placed ** currently for development only cubes **
+//board pieces placed on the screen
 var meshes = [];
 const pieceModels = {
   'wp': 'pieces/white-pawn.gltf',
@@ -2181,6 +2224,7 @@ const pieceModels = {
   'bn': 'pieces/black-knight.gltf',
 };
 
+// update the display of the board an dwhere 3d models are placed
 function updateBoardMeshes(op="") {
 
   resetPlanes();
@@ -2295,12 +2339,14 @@ function updateBoardMeshes(op="") {
 // board location planes for raycast and game logic
 var prevClickedMesh = null;
 
+// shows user where they can move to
 function highlightMoves(moves) {
   for (let i = 0; i < moves.length; i++) {
     highlightPlane(moves[i][0],moves[i][1]);
   }
 }
 
+// makes a spot on the board yellow
 function highlightPlane(r,c,color="yellow") {
   if (color == "yellow") {
     planesArray[r][c].material.color.set(0xffff00);
@@ -2309,6 +2355,7 @@ function highlightPlane(r,c,color="yellow") {
   }
 }
 
+// resets the highlight of the board
 function resetPlanes() {
   if (gm == "double") {
     for (let i = 0; i < 16;i++) {
@@ -2339,6 +2386,7 @@ function resetPlanes() {
   }
 }
 
+// detects when the user clicks on the chess board model or the chess pieces
 function onCanvasClick(event) {
   kingLoc = findKing(team);
   resetPlanes();
@@ -2586,6 +2634,7 @@ addPointLight(0xffffff, 3, 80, new THREE.Vector3(-30, 25, 0));
 addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, 30));
 addPointLight(0xffffff, 3, 80, new THREE.Vector3(0, 25, -30));
 
+// changes the board used based on game mode selected
 function switchBoard(name) {
   scene.remove(model);
   clearPointLights();
